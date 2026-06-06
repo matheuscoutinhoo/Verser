@@ -78,6 +78,14 @@ export class AbacusAIProvider implements IAIProvider {
     };
 
     const response = await this.post<unknown>(url, body);
+    // Debug-only dump of the top-level shape so we can grow `extractImageUrl`
+    // if a deployment ever returns yet another envelope. Never log payloads.
+    if (logger.level === 'debug' && response && typeof response === 'object') {
+      logger.debug(
+        { keys: Object.keys(response) },
+        'AbacusAI generateImage: response keys',
+      );
+    }
     const imageUrl = this.extractImageUrl(response);
 
     return { imageUrl, model: this.imageModel };
@@ -223,19 +231,32 @@ export class AbacusAIProvider implements IAIProvider {
   }
 
   private extractImageUrl(response: unknown): string {
-    const r = response as Record<string, unknown> | null;
-    if (!r) throw new InternalError('Abacus AI returned an empty image response');
-
-    if (typeof r.imageUrl === 'string') return r.imageUrl;
-    if (typeof r.url === 'string') return r.url;
-    const result = r.result as Record<string, unknown> | undefined;
-    if (result) {
-      if (typeof result.imageUrl === 'string') return result.imageUrl;
-      if (typeof result.url === 'string') return result.url;
+    if (response === null || response === undefined) {
+      throw new InternalError('Abacus AI returned an empty image response');
     }
-    const data = r.data as Array<{ url?: string }> | undefined;
-    if (data?.[0]?.url) return data[0].url;
 
+    // 1) Walk the response and return the first URL-looking string. Abacus
+    //    deployments emit several shapes ({ result: "..." }, { result: { url }},
+    //    { data: [{ url }]}, segments arrays, signedUrl, downloadUrl…), so a
+    //    recursive search is simpler — and safer — than a long if-ladder.
+    const url = findFirstUrl(response);
+    if (url) return url;
+
+    // 2) Some deployments return raw base64 bytes instead of a URL. Promote
+    //    any sensible-looking base64 field to a `data:` URL the browser can
+    //    render directly.
+    const dataUrl = findFirstBase64Image(response);
+    if (dataUrl) return dataUrl;
+
+    // 3) Give the operator something to act on. We log only the top-level
+    //    keys (no payloads) to avoid leaking image bytes into logs.
+    logger.error(
+      {
+        keys: response && typeof response === 'object' ? Object.keys(response) : [],
+        type: typeof response,
+      },
+      'extractImageUrl: no URL/base64 found in Abacus AI image response',
+    );
     throw new InternalError('Could not locate image URL in Abacus AI response');
   }
 
@@ -254,4 +275,96 @@ export class AbacusAIProvider implements IAIProvider {
       return [];
     }
   }
+}
+
+// ── module-private helpers ─────────────────────────
+
+const URL_LIKE_REGEX = /^(https?:\/\/|data:image\/)[^\s"'<>]+$/i;
+const URL_FIELD_HINTS = new Set([
+  'url',
+  'imageurl',
+  'image_url',
+  'signedurl',
+  'signed_url',
+  'downloadurl',
+  'download_url',
+  'image',
+  'src',
+  'href',
+  'output_url',
+  'cdnurl',
+  'cdn_url',
+]);
+
+/**
+ * Recursively scan `value` for the first string that looks like an http(s)
+ * URL or a `data:image/...` URL. Field names are not required to match — we
+ * fall back to matching on the value — but obviously-named fields are
+ * preferred when both are present at the same depth.
+ */
+function findFirstUrl(value: unknown): string | null {
+  const queue: unknown[] = [value];
+  while (queue.length > 0) {
+    const node = queue.shift();
+    if (typeof node === 'string') {
+      if (URL_LIKE_REGEX.test(node.trim())) return node.trim();
+      continue;
+    }
+    if (Array.isArray(node)) {
+      for (const item of node) queue.push(item);
+      continue;
+    }
+    if (node && typeof node === 'object') {
+      const entries = Object.entries(node as Record<string, unknown>);
+      // Prefer URL-hinted fields first so we don't pick up arbitrary
+      // strings (e.g. a description containing a URL) when a proper one
+      // exists alongside.
+      entries.sort(([a], [b]) => {
+        const aHint = URL_FIELD_HINTS.has(a.toLowerCase()) ? 0 : 1;
+        const bHint = URL_FIELD_HINTS.has(b.toLowerCase()) ? 0 : 1;
+        return aHint - bHint;
+      });
+      for (const [, v] of entries) queue.push(v);
+    }
+  }
+  return null;
+}
+
+const BASE64_FIELD_HINTS = new Set([
+  'b64_json',
+  'b64',
+  'base64',
+  'imagedata',
+  'image_base64',
+  'image_bytes',
+]);
+
+/**
+ * Look for a base64-encoded image embedded in the response and promote it
+ * to a `data:` URL the browser can render. Only matches fields whose name
+ * hints at base64 image content + a non-trivial payload, to avoid coercing
+ * unrelated strings.
+ */
+function findFirstBase64Image(value: unknown): string | null {
+  const queue: Array<{ key: string | null; v: unknown }> = [{ key: null, v: value }];
+  while (queue.length > 0) {
+    const { key, v } = queue.shift() ?? { key: null, v: null };
+    if (typeof v === 'string') {
+      if (key && BASE64_FIELD_HINTS.has(key.toLowerCase()) && v.length > 100) {
+        const cleaned = v.replace(/^data:[^;]+;base64,/i, '');
+        return `data:image/png;base64,${cleaned}`;
+      }
+      continue;
+    }
+    if (Array.isArray(v)) {
+      for (const item of v) queue.push({ key, v: item });
+      continue;
+    }
+    if (v && typeof v === 'object') {
+      for (const [k, child] of Object.entries(v as Record<string, unknown>)) {
+        queue.push({ key: k, v: child });
+      }
+    }
+  }
+  return null;
 }
