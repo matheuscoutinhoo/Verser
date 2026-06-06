@@ -69,13 +69,52 @@ export class AbacusAIProvider implements IAIProvider {
     const path = process.env.ABACUS_AI_IMAGE_PATH ?? '/v0/generateImage';
     const url = this.url(path);
 
-    const body = {
-      deploymentId: this.imageModel,
-      prompt: request.prompt,
-      style: request.style,
-      width: request.width ?? 1024,
-      height: request.height ?? 1024,
-    };
+    // Detect the endpoint shape from the path. OpenAI-compatible facades
+    // (RouteLLM, custom OpenAI proxies) expect either `/chat/completions`
+    // with messages or `/images/generations` with a flat prompt; the
+    // classic Abacus ChatLLM endpoint expects { deploymentId, prompt }.
+    const isChatCompletions = /\/chat\/completions(\b|$)/i.test(path);
+    const isImagesGenerations = /\/images\/generations(\b|$)/i.test(path);
+
+    let body: unknown;
+    if (isChatCompletions) {
+      // Multimodal-aware models (Gemini Flash Image, GPT-Image, …) accept a
+      // plain user message describing the image. We add a light system
+      // hint so the assistant returns a usable URL (or markdown image)
+      // rather than prose around it.
+      body = {
+        model: this.imageModel,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are an image generator. Return ONLY the resulting image — either as a direct URL on its own line or as a markdown image link. Do not add explanations.',
+          },
+          {
+            role: 'user',
+            content: request.style
+              ? `${request.prompt}\n\nStyle: ${request.style}`
+              : request.prompt,
+          },
+        ],
+      };
+    } else if (isImagesGenerations) {
+      body = {
+        model: this.imageModel,
+        prompt: request.style ? `${request.prompt} — ${request.style}` : request.prompt,
+        size: `${request.width ?? 1024}x${request.height ?? 1024}`,
+        n: 1,
+      };
+    } else {
+      // Classic Abacus ChatLLM / REST predict shape.
+      body = {
+        deploymentId: this.imageModel,
+        prompt: request.prompt,
+        style: request.style,
+        width: request.width ?? 1024,
+        height: request.height ?? 1024,
+      };
+    }
 
     const response = await this.post<unknown>(url, body);
     // Debug-only dump of the top-level shape so we can grow `extractImageUrl`
