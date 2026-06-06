@@ -10,10 +10,13 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANTS: Record<Variant, string> = {
+  // Primary stays outlined-only at rest; the gold gradient fill + halo
+  // only appear on hover/focus, so the UI doesn't feel crowded with
+  // illuminated rectangles.
   primary:
-    'gold-gradient-soft text-text-accent border-border-strong shadow-[var(--glow-gold-sm)] hover:shadow-[var(--glow-gold-md)] hover:border-border-glow hover:text-accent-gold-light',
+    'bg-transparent text-text-accent border-border-strong hover:[background:var(--gradient-gold-soft)] hover:shadow-[var(--glow-gold-md)] hover:border-border-glow hover:text-accent-gold-light focus-visible:[background:var(--gradient-gold-soft)] focus-visible:shadow-[var(--glow-gold-sm)]',
   secondary:
-    'bg-bg-elevated text-text-primary border-border-primary hover:bg-bg-hover hover:border-border-strong',
+    'bg-transparent text-text-primary border-border-primary hover:bg-bg-elevated hover:border-border-strong',
   ghost:
     'bg-transparent text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-elevated',
   danger:
