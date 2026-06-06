@@ -279,7 +279,12 @@ export class AbacusAIProvider implements IAIProvider {
 
 // ── module-private helpers ─────────────────────────
 
-const URL_LIKE_REGEX = /^(https?:\/\/|data:image\/)[^\s"'<>]+$/i;
+// Matches an http(s) or data:image URL anywhere inside a string. Stops at
+// whitespace, quotes, angle/closing brackets, parens and backticks, which
+// covers markdown (`![alt](url)`), JSON-embedded URLs, and prose. Image
+// extensions get a small preference when ranking multiple matches.
+const URL_REGEX = /(https?:\/\/[^\s"'<>)\]`]+|data:image\/[a-zA-Z+]+;base64,[A-Za-z0-9+/=]+)/gi;
+const IMAGE_EXT_REGEX = /\.(png|jpe?g|webp|gif|bmp|svg|avif)(\?|#|$)/i;
 const URL_FIELD_HINTS = new Set([
   'url',
   'imageurl',
@@ -294,20 +299,26 @@ const URL_FIELD_HINTS = new Set([
   'output_url',
   'cdnurl',
   'cdn_url',
+  // Chat-completion style: image-as-text deployments embed the URL inside
+  // the assistant's message content.
+  'content',
+  'text',
+  'message',
 ]);
 
 /**
- * Recursively scan `value` for the first string that looks like an http(s)
- * URL or a `data:image/...` URL. Field names are not required to match — we
- * fall back to matching on the value — but obviously-named fields are
- * preferred when both are present at the same depth.
+ * Recursively scan `value` for the first http(s)/data:image URL embedded in
+ * any string. URL-hinted fields are visited first, and URLs whose path
+ * carries a common image extension are preferred over generic ones.
  */
 function findFirstUrl(value: unknown): string | null {
   const queue: unknown[] = [value];
+  const candidates: string[] = [];
   while (queue.length > 0) {
     const node = queue.shift();
     if (typeof node === 'string') {
-      if (URL_LIKE_REGEX.test(node.trim())) return node.trim();
+      const matches = node.match(URL_REGEX);
+      if (matches) candidates.push(...matches);
       continue;
     }
     if (Array.isArray(node)) {
@@ -316,9 +327,8 @@ function findFirstUrl(value: unknown): string | null {
     }
     if (node && typeof node === 'object') {
       const entries = Object.entries(node as Record<string, unknown>);
-      // Prefer URL-hinted fields first so we don't pick up arbitrary
-      // strings (e.g. a description containing a URL) when a proper one
-      // exists alongside.
+      // Visit hinted keys first so the search short-circuits on the most
+      // likely URL holder when multiple candidates exist.
       entries.sort(([a], [b]) => {
         const aHint = URL_FIELD_HINTS.has(a.toLowerCase()) ? 0 : 1;
         const bHint = URL_FIELD_HINTS.has(b.toLowerCase()) ? 0 : 1;
@@ -327,7 +337,11 @@ function findFirstUrl(value: unknown): string | null {
       for (const [, v] of entries) queue.push(v);
     }
   }
-  return null;
+  if (candidates.length === 0) return null;
+  // Prefer URLs whose path looks like an image asset; otherwise just take
+  // the first one we found.
+  const imageLike = candidates.find((u) => IMAGE_EXT_REGEX.test(u));
+  return imageLike ?? candidates[0];
 }
 
 const BASE64_FIELD_HINTS = new Set([
