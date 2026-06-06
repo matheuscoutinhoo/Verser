@@ -8,8 +8,9 @@ import { Textarea } from '../../ui/Textarea';
 import { useConfirmDialog } from '../../ui/useConfirmDialog';
 import { useEntityCrud } from '../../../hooks/useEntityCrud';
 import { locationsService } from '../../../services/worldbuilding.service';
-import { EntityListItem } from '../EntityListItem';
 import { InlineImagePicker } from '../InlineImagePicker';
+import { LocationCard } from '../LocationCard';
+import { LocationDetailModal } from '../LocationDetailModal';
 import { ManagerShell } from '../ManagerShell';
 import { AIImageGeneratorModal } from '../../ai/AIImageGeneratorModal';
 
@@ -107,6 +108,8 @@ export function LocationsManager({ universeId, onChange }: LocationsManagerProps
   // When the AI modal is opened from the create form (no location row yet),
   // we land the generated URL straight into the form state.
   const [aiOpenForCreate, setAiOpenForCreate] = useState(false);
+  // Location whose detail sheet is currently open (modal).
+  const [viewing, setViewing] = useState<Location | null>(null);
 
   const parentOptions = useMemo(
     () => [
@@ -230,24 +233,33 @@ export function LocationsManager({ universeId, onChange }: LocationsManagerProps
         </Button>
       }
     >
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {crud.items.map((l) => {
           const parent = l.parentId ? locationsById.get(l.parentId) : null;
           return (
             <li key={l.id}>
-              <EntityListItem
-                title={l.name}
-                subtitle={parent ? `inside ${parent.name}` : 'top-level'}
-                imageUrl={l.imageUrl ?? undefined}
-                glyph="◆"
-                body={l.description ? <p className="line-clamp-3">{l.description}</p> : null}
-                onEdit={() => openEdit(l)}
-                onDelete={() => void handleDelete(l)}
+              <LocationCard
+                location={l}
+                parentName={parent?.name ?? null}
+                onOpen={(picked) => setViewing(picked)}
+                onEdit={(picked) => openEdit(picked)}
+                onDelete={(picked) => void handleDelete(picked)}
               />
             </li>
           );
         })}
       </ul>
+
+      <LocationDetailModal
+        location={viewing}
+        open={viewing !== null}
+        onClose={() => setViewing(null)}
+        parentName={
+          viewing?.parentId ? (locationsById.get(viewing.parentId)?.name ?? null) : null
+        }
+        onEdit={(picked) => openEdit(picked)}
+        onDelete={(picked) => void handleDelete(picked)}
+      />
 
       <Modal
         open={editing !== null}
