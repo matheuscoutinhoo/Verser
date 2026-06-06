@@ -9,14 +9,14 @@ export interface StatCardProps {
 
 export function StatCard({ label, value, hint, glyph }: StatCardProps) {
   return (
-    <article className="surface-card is-interactive group flex flex-col gap-2 p-5">
+    <article className="surface-card is-interactive gold-glow-hover group flex flex-col gap-2 p-5">
       <div className="flex items-center justify-between">
         <p className="font-ui text-[10px] uppercase tracking-[0.22em] text-text-secondary">
           {label}
         </p>
         {glyph ? (
           <span
-            className="font-display text-sm text-text-accent/70 transition-colors group-hover:text-text-accent"
+            className="font-display text-sm text-text-accent/70 transition-all duration-base group-hover:text-text-accent group-hover:[text-shadow:var(--glow-gold-text)]"
             aria-hidden
           >
             {glyph}

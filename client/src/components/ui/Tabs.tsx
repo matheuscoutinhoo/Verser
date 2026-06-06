@@ -65,7 +65,7 @@ export function Tabs<TKey extends string = string>({
               className={[
                 'absolute bottom-0 left-2 right-2 h-px origin-center transition-all duration-base ease-out',
                 isActive
-                  ? 'scale-x-100 bg-accent-gold/80'
+                  ? 'scale-x-100 bg-[image:var(--gradient-gold-line)] shadow-[0_0_10px_rgba(196,162,101,0.45)]'
                   : 'scale-x-0 bg-border-ornate/60 group-hover:scale-x-100',
               ].join(' ')}
             />

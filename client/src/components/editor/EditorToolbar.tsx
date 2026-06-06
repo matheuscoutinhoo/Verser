@@ -23,9 +23,9 @@ function ToolbarButton({ label, title, onClick, active, disabled }: ButtonProps)
       onClick={onClick}
       disabled={disabled}
       className={[
-        'rounded-md px-2 py-1 text-xs font-medium transition-colors duration-fast ease-out',
+        'rounded-md px-2 py-1 text-xs font-medium transition-all duration-fast ease-out',
         active
-          ? 'bg-accent-gold-soft text-text-accent'
+          ? 'gold-gradient-soft text-text-accent shadow-[var(--glow-gold-sm)]'
           : 'text-text-secondary hover:bg-bg-elevated hover:text-text-primary',
         'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent',
       ].join(' ')}

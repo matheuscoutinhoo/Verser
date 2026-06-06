@@ -53,6 +53,45 @@
   --shadow-lg: 0 18px 50px -16px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
   --shadow-glow: 0 0 0 1px rgba(196, 162, 101, 0.18), 0 8px 28px -10px rgba(196, 162, 101, 0.18);
 
+  /* Gold gradients — used by primary buttons, brand mark and active accents.
+     The soft variant stays mostly transparent so it sits well on dark surfaces. */
+  --gradient-gold:
+    linear-gradient(135deg, #d4b87a 0%, #c4a265 50%, #a88649 100%);
+  --gradient-gold-soft:
+    linear-gradient(
+      135deg,
+      rgba(212, 184, 122, 0.18) 0%,
+      rgba(196, 162, 101, 0.12) 50%,
+      rgba(168, 134, 73, 0.16) 100%
+    );
+  --gradient-gold-text:
+    linear-gradient(135deg, #e8cf94 0%, #c4a265 55%, #b08c52 100%);
+  --gradient-gold-line:
+    linear-gradient(
+      to right,
+      transparent,
+      rgba(196, 162, 101, 0.45) 25%,
+      rgba(212, 184, 122, 0.9) 50%,
+      rgba(196, 162, 101, 0.45) 75%,
+      transparent
+    );
+
+  /* Glows — layered so the inner edge stays crisp while the outer halo is wide and soft. */
+  --glow-gold-sm:
+    0 0 0 1px rgba(196, 162, 101, 0.22),
+    0 4px 14px -4px rgba(196, 162, 101, 0.28);
+  --glow-gold-md:
+    0 0 0 1px rgba(196, 162, 101, 0.3),
+    0 6px 18px -4px rgba(196, 162, 101, 0.32),
+    0 14px 36px -10px rgba(196, 162, 101, 0.18);
+  --glow-gold-lg:
+    0 0 0 1px rgba(196, 162, 101, 0.4),
+    0 8px 22px -4px rgba(196, 162, 101, 0.45),
+    0 18px 48px -10px rgba(196, 162, 101, 0.25);
+  --glow-gold-text:
+    0 0 12px rgba(196, 162, 101, 0.35),
+    0 0 32px rgba(196, 162, 101, 0.15);
+
   /* Radii */
   --radius-sm: 4px;
   --radius-md: 6px;

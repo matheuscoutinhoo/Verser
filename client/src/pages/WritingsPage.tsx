@@ -269,7 +269,7 @@ export function WritingsPage() {
                 >
                   ← Universe
                 </Link>
-                <h1 className="truncate font-display text-xl text-text-accent sm:text-2xl">
+                <h1 className="gold-text truncate font-display text-xl sm:text-2xl">
                   {writing.title}
                 </h1>
                 <p className="text-xs text-text-secondary">

@@ -9,7 +9,7 @@ export function UniverseCard({ universe }: UniverseCardProps) {
   return (
     <Link
       to={`/universes/${universe.id}`}
-      className="surface-card is-interactive group relative block aspect-[4/5] overflow-hidden transition-transform duration-base ease-out hover:-translate-y-1"
+      className="surface-card is-interactive gold-glow-hover group relative block aspect-[4/5] overflow-hidden transition-transform duration-base ease-out hover:-translate-y-1"
     >
       {universe.coverUrl ? (
         <>

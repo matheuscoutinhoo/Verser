@@ -23,14 +23,14 @@ export function OrnateDivider({
       className={`relative my-8 flex items-center ${className}`}
       {...rest}
     >
-      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border-strong to-transparent" />
+      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-accent-gold/40 to-transparent" />
       {variant !== 'plain' ? (
-        <span className="mx-4 select-none font-display text-[10px] uppercase tracking-[0.35em] text-text-accent/60">
+        <span className="mx-4 select-none font-display text-[10px] uppercase tracking-[0.35em] text-text-accent [text-shadow:var(--glow-gold-text)]">
           {variant === 'diamond' ? '◆' : '✦'}
-          {label ? <span className="ml-2 text-text-muted">{label}</span> : null}
+          {label ? <span className="ml-2 text-text-muted [text-shadow:none]">{label}</span> : null}
         </span>
       ) : null}
-      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border-strong to-transparent" />
+      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-accent-gold/40 to-transparent" />
     </div>
   );
 }

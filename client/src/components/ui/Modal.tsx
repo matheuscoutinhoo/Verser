@@ -48,7 +48,7 @@ export function Modal({ open, onClose, title, children, size = 'lg' }: ModalProp
       >
         {title ? (
           <div className="mb-5 flex items-start justify-between gap-4">
-            <h2 className="font-display text-lg uppercase tracking-[0.2em] text-text-accent">
+            <h2 className="gold-text font-display text-lg uppercase tracking-[0.2em]">
               {title}
             </h2>
             <button

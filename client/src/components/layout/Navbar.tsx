@@ -27,7 +27,7 @@ export function Navbar() {
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         <NavLink
           to={isAuthenticated ? '/dashboard' : '/'}
-          className="font-display text-lg tracking-[0.35em] text-text-accent transition-colors hover:text-accent-gold-light"
+          className="gold-text font-display text-lg tracking-[0.35em] transition-opacity hover:opacity-90"
           aria-label="Verser home"
         >
           VERSER

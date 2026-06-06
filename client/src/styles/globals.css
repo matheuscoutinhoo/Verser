@@ -64,6 +64,21 @@
   }
 }
 
+@keyframes verser-glow-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(196, 162, 101, 0.18),
+      0 4px 14px -4px rgba(196, 162, 101, 0.22);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(196, 162, 101, 0.32),
+      0 6px 22px -4px rgba(196, 162, 101, 0.4),
+      0 14px 40px -10px rgba(196, 162, 101, 0.22);
+  }
+}
+
 @layer base {
   html,
   body,
@@ -167,6 +182,60 @@
       var(--border-ornate) 50%,
       transparent
     );
+  }
+
+  /* ─── Gold gradient + glow utilities ─────────────────────────────
+     These mix a warm gold linear-gradient with a soft halo. Use the
+     `-soft` variants on dark surfaces (translucent fill); use the
+     solid variants for filled accents like primary buttons. */
+
+  .gold-gradient {
+    background: var(--gradient-gold);
+    color: #1c1810;
+  }
+
+  .gold-gradient-soft {
+    background: var(--gradient-gold-soft);
+  }
+
+  /* Gold text gradient with a faint glow behind the letters. */
+  .gold-text {
+    background-image: var(--gradient-gold-text);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    text-shadow: var(--glow-gold-text);
+  }
+
+  /* Static halo around any element (cards, badges, buttons). */
+  .gold-glow {
+    box-shadow: var(--glow-gold-md);
+  }
+  .gold-glow-sm {
+    box-shadow: var(--glow-gold-sm);
+  }
+  .gold-glow-lg {
+    box-shadow: var(--glow-gold-lg);
+  }
+
+  /* Halo that only appears on hover. Pairs well with surface-card. */
+  .gold-glow-hover {
+    transition: box-shadow var(--duration-base) var(--ease-out);
+  }
+  .gold-glow-hover:hover {
+    box-shadow: var(--glow-gold-sm);
+  }
+
+  /* Pulsing breathing-halo for "hero" accents (sparingly!). */
+  .gold-glow-pulse {
+    animation: verser-glow-pulse 3.4s var(--ease-in-out) infinite;
+  }
+
+  /* Decorative horizontal rule with a brighter gold core. */
+  .gold-line {
+    height: 1px;
+    background: var(--gradient-gold-line);
   }
 
   /* â”€â”€â”€ Animation utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */

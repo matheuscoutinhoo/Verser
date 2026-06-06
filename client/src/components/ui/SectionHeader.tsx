@@ -18,7 +18,12 @@ export function SectionHeader({
       className={`flex flex-wrap items-end justify-between gap-3 ${className}`}
       {...rest}
     >
-      <div>
+      <div className="relative pl-3">
+        {/* Decorative gold-gradient bar with a faint halo. */}
+        <span
+          aria-hidden
+          className="absolute left-0 top-1 h-[calc(100%-0.5rem)] w-px bg-gradient-to-b from-accent-gold-light via-accent-gold to-transparent shadow-[0_0_8px_rgba(196,162,101,0.45)]"
+        />
         <h2 className="font-display text-xs uppercase tracking-[0.3em] text-text-secondary">
           {title}
         </h2>

@@ -193,7 +193,7 @@ export function UniverseDetailPage() {
                   {data.genre}
                 </p>
               ) : null}
-              <h1 className="mt-1 font-display text-4xl tracking-tight text-text-primary drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] sm:text-5xl lg:text-6xl">
+              <h1 className="gold-text mt-1 font-display text-4xl tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] sm:text-5xl lg:text-6xl">
                 {data.name}
               </h1>
             </div>

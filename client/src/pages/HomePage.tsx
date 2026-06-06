@@ -22,7 +22,7 @@ export function HomePage() {
         <h1 className="font-display text-4xl leading-tight tracking-tight text-text-primary sm:text-6xl">
           The World-Aware
           <br />
-          <span className="text-text-accent">Writing Studio</span>
+          <span className="gold-text">Writing Studio</span>
         </h1>
         <p className="mx-auto max-w-xl text-base leading-relaxed text-text-secondary">
           Worldbuilding and AI-assisted writing for series fiction. Your universe stays
