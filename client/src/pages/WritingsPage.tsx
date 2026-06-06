@@ -46,7 +46,9 @@ export function WritingsPage() {
   const [createTitle, setCreateTitle] = useState('');
 
   const [versionsOpen, setVersionsOpen] = useState(false);
-  const [aiPanelOpen, setAiPanelOpen] = useState(true);
+  // AI panel is closed by default so the editor takes the full canvas; the
+  // writer toggles it open when they want a co-writer alongside the page.
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [selectionText, setSelectionText] = useState('');
   const [surroundingText, setSurroundingText] = useState('');
@@ -231,10 +233,13 @@ export function WritingsPage() {
   return (
     <div
       className={[
-        'grid h-[calc(100vh-10rem)] grid-cols-1 gap-4 sm:gap-6',
+        // Studio surface: use almost the full viewport vertically. Header
+        // (3.5rem) + slim main padding (0.75rem top + bottom) + footer
+        // (~3rem) ≈ 8rem of chrome.
+        'grid h-[calc(100vh-8rem)] grid-cols-1 gap-3 sm:gap-4',
         aiPanelOpen
-          ? 'lg:grid-cols-[260px,1fr,320px]'
-          : 'lg:grid-cols-[280px,1fr]',
+          ? 'lg:grid-cols-[220px,1fr,300px]'
+          : 'lg:grid-cols-[220px,1fr]',
       ].join(' ')}
     >
       <div className="hidden min-h-0 lg:block">
@@ -258,21 +263,21 @@ export function WritingsPage() {
         )}
       </div>
 
-      <div className="flex min-h-0 flex-col gap-3">
+      <div className="flex min-h-0 flex-col gap-2">
         {writing ? (
           <>
-            <header className="flex flex-wrap items-start justify-between gap-3">
+            <header className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
                 <Link
                   to={`/universes/${universeId}`}
-                  className="text-xs uppercase tracking-widest text-text-secondary hover:text-text-primary"
+                  className="text-[10px] uppercase tracking-widest text-text-secondary hover:text-text-primary"
                 >
                   ← Universe
                 </Link>
-                <h1 className="gold-text truncate font-display text-xl sm:text-2xl">
+                <h1 className="gold-text truncate font-display text-lg leading-tight sm:text-xl">
                   {writing.title}
                 </h1>
-                <p className="text-xs text-text-secondary">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">
                   {writing.type} · {writing.status} · {words} words
                 </p>
               </div>
@@ -298,7 +303,7 @@ export function WritingsPage() {
                   variant="secondary"
                   onClick={() => setAiPanelOpen((o) => !o)}
                 >
-                  {aiPanelOpen ? 'Hide AI' : 'Show AI'}
+                  {aiPanelOpen ? 'Hide AI' : 'AI'}
                 </Button>
                 <Button size="sm" variant="secondary" onClick={() => setVersionsOpen(true)}>
                   Versions

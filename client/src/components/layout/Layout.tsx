@@ -4,13 +4,21 @@ import { Navbar } from './Navbar';
 
 export function Layout({ children }: { children: ReactNode }) {
   const location = useLocation();
+  // The Writing Studio is a "studio" surface — give it the whole viewport
+  // width and slim vertical padding so the editor itself becomes the
+  // primary canvas instead of a narrow inset.
+  const isStudio = /\/write(?:\/|$)/.test(location.pathname);
   return (
     <div className="flex min-h-screen flex-col bg-bg-primary text-text-primary">
       <Navbar />
       <main
-        // Key on pathname triggers the page-fade animation on every route change.
         key={location.pathname}
-        className="anim-fade-up mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-10"
+        className={[
+          'anim-fade-up mx-auto w-full flex-1',
+          isStudio
+            ? 'max-w-[1600px] px-3 py-3 sm:px-4 sm:py-4'
+            : 'max-w-7xl px-4 py-6 sm:px-6 sm:py-10',
+        ].join(' ')}
       >
         {children}
       </main>

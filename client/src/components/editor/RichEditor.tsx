@@ -63,8 +63,11 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(function
     content: content || '',
     editorProps: {
       attributes: {
+        // Center the text in a comfortable reading column (~72ch). Generous
+        // padding so the page itself feels like a manuscript surface and
+        // the writer can focus on the words.
         class:
-          'editor-surface tiptap prose prose-invert max-w-none min-h-[60vh] focus:outline-none px-4 py-6',
+          'editor-surface tiptap prose prose-invert max-w-[72ch] mx-auto min-h-full focus:outline-none px-6 py-10 sm:px-10 sm:py-14',
       },
     },
     onUpdate({ editor: e }) {
@@ -113,8 +116,11 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(function
   return (
     <div
       className={[
-        'flex flex-col rounded-md border border-border-primary bg-bg-secondary',
-        fullscreen ? 'fixed inset-0 z-50 rounded-none border-0' : '',
+        // Treat the editor card as a paper-like surface. Slightly lifted
+        // tone vs. the page background so the writing area visually pulls
+        // forward as the focal point of the studio.
+        'flex h-full flex-col rounded-md border border-border-primary bg-bg-secondary/60',
+        fullscreen ? 'fixed inset-0 z-50 h-screen rounded-none border-0 bg-bg-primary' : '',
       ].join(' ')}
     >
       <EditorToolbar
@@ -125,7 +131,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(function
       <div className="flex-1 overflow-auto">
         <EditorContent editor={editor} />
       </div>
-      <div className="flex justify-end gap-4 border-t border-border-primary px-4 py-2 text-xs text-text-muted">
+      <div className="flex justify-end gap-4 border-t border-border-primary px-4 py-2 text-[10px] uppercase tracking-[0.15em] text-text-muted">
         <span>{words} words</span>
         <span>{chars} chars</span>
       </div>
