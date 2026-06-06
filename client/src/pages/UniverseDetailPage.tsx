@@ -252,8 +252,9 @@ export function UniverseDetailPage() {
         <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
         {/* Keep-alive: render each tab once visited and toggle visibility.
             Avoids the flash-of-spinner that comes from remounting on every
-            tab switch. */}
-        <div className="relative">
+            tab switch. min-h reserves vertical room so swapping between a
+            heavy panel and a light one doesn't jolt the page. */}
+        <div className="relative min-h-[420px]">
           {visited.characters && (
             <TabPanel active={activeTab === 'characters'}>
               <CharactersManager universeId={data.id} onChange={() => void run()} />
@@ -303,9 +304,7 @@ export function UniverseDetailPage() {
 }
 
 function TabPanel({ active, children }: { active: boolean; children: React.ReactNode }) {
-  return (
-    <div hidden={!active} className={active ? 'anim-fade-up' : ''}>
-      {children}
-    </div>
-  );
+  // No entrance animation — switching between already-visited tabs should
+  // feel instant. The page entrance animation lives on the outer section.
+  return <div hidden={!active}>{children}</div>;
 }
