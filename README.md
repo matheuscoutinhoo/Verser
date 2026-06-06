@@ -18,7 +18,7 @@ A web platform that combines deep worldbuilding with context-aware AI assistance
 | 2 — Worldbuilding CRUDs              | ✅ Complete    |
 | 3 — TipTap editor & versioning       | ✅ Complete    |
 | 4 — Abacus AI integration            | ✅ Complete    |
-| 5 — Polish, dashboard, mobile        | ❌ Pending     |
+| 5 — Polish, dashboard, mobile        | ✅ Complete    |
 
 Always update this README when something changes setup, scripts, env vars, dependencies, or phase status (per AGENTS § 8).
 
@@ -103,8 +103,8 @@ npm run dev:client   # Web on http://localhost:5173
 ### Testing
 
 ```bash
-npm run test:server         # Server (Jest + Supertest, 88 tests)
-npm run test:client         # Client (Vitest + RTL, 16 tests)
+npm run test:server         # Server (Jest + Supertest, 111 tests)
+npm run test:client         # Client (Vitest + RTL, 27 tests)
 ```
 
 The AI provider is auto-mocked in tests (`MockAIProvider`), so no real API key is required to run the suite.

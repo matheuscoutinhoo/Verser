@@ -4,8 +4,11 @@ import { WRITING, type Writing, type WritingTreeNode } from '@verser/shared';
 import { AIAssistantPanel } from '../components/ai/AIAssistantPanel';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { EmptyState } from '../components/ui/EmptyState';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
+import { Spinner } from '../components/ui/Spinner';
+import { useConfirmDialog } from '../components/ui/useConfirmDialog';
 import {
   RichEditor,
   type RichEditorChange,
@@ -44,9 +47,11 @@ export function WritingsPage() {
 
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [selectionText, setSelectionText] = useState('');
   const [surroundingText, setSurroundingText] = useState('');
   const editorRef = useRef<RichEditorHandle | null>(null);
+  const { confirm, ConfirmDialogPortal } = useConfirmDialog();
 
   // Keep the latest persisted snapshot so we can compute "dirty".
   const persistedContent = useRef<string>('');
@@ -170,7 +175,21 @@ export function WritingsPage() {
 
   const handleDelete = useCallback(
     async (node: WritingTreeNode) => {
-      if (!confirm(`Delete "${node.title}" and all its children? This cannot be undone.`)) return;
+      const ok = await confirm({
+        title: 'Delete document?',
+        description: (
+          <>
+            <p>
+              <strong className="text-text-accent">{node.title}</strong> and all its
+              children will be permanently removed, including their version snapshots.
+            </p>
+            <p className="mt-2 text-text-muted">This cannot be undone.</p>
+          </>
+        ),
+        confirmLabel: 'Delete',
+        destructive: true,
+      });
+      if (!ok) return;
       try {
         await writingService.delete(universeId, node.id);
         if (selectedId === node.id) setSelectedId(null);
@@ -179,7 +198,7 @@ export function WritingsPage() {
         setSaveError(err instanceof Error ? err.message : 'Failed to delete document');
       }
     },
-    [universeId, selectedId, refreshTree],
+    [confirm, universeId, selectedId, refreshTree],
   );
 
   const handleManualSnapshot = useCallback(async () => {
@@ -212,15 +231,15 @@ export function WritingsPage() {
   return (
     <div
       className={[
-        'grid h-[calc(100vh-9rem)] grid-cols-1 gap-6',
+        'grid h-[calc(100vh-10rem)] grid-cols-1 gap-4 sm:gap-6',
         aiPanelOpen
           ? 'lg:grid-cols-[260px,1fr,320px]'
           : 'lg:grid-cols-[280px,1fr]',
       ].join(' ')}
     >
-      <div className="min-h-0">
+      <div className="hidden min-h-0 lg:block">
         {treeLoading ? (
-          <p className="text-text-secondary">Loading…</p>
+          <Spinner label="Loading documents…" />
         ) : treeError ? (
           <Card title="Could not load documents">
             <p className="text-sm text-accent-red">{treeError}</p>
@@ -234,7 +253,7 @@ export function WritingsPage() {
             selectedId={selectedId}
             onSelect={setSelectedId}
             onCreate={handleCreate}
-            onDelete={handleDelete}
+            onDelete={(node) => void handleDelete(node)}
           />
         )}
       </div>
@@ -242,20 +261,22 @@ export function WritingsPage() {
       <div className="flex min-h-0 flex-col gap-3">
         {writing ? (
           <>
-            <header className="flex items-center justify-between">
-              <div>
+            <header className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
                 <Link
                   to={`/universes/${universeId}`}
                   className="text-xs uppercase tracking-widest text-text-secondary hover:text-text-primary"
                 >
                   ← Universe
                 </Link>
-                <h1 className="font-display text-2xl text-text-accent">{writing.title}</h1>
+                <h1 className="truncate font-display text-xl text-text-accent sm:text-2xl">
+                  {writing.title}
+                </h1>
                 <p className="text-xs text-text-secondary">
                   {writing.type} · {writing.status} · {words} words
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={[
                     'text-xs',
@@ -264,6 +285,14 @@ export function WritingsPage() {
                 >
                   {saveLabel}
                 </span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="lg:hidden"
+                  onClick={() => setMobileSidebarOpen(true)}
+                >
+                  Docs
+                </Button>
                 <Button
                   size="sm"
                   variant="secondary"
@@ -278,7 +307,7 @@ export function WritingsPage() {
                   Snapshot
                 </Button>
                 <Button size="sm" onClick={() => void doSave()} disabled={saveStatus !== 'dirty'}>
-                  Save now
+                  Save
                 </Button>
               </div>
             </header>
@@ -298,14 +327,68 @@ export function WritingsPage() {
             </div>
           </>
         ) : (
-          <Card title="Select a document" subtitle="Choose a document from the sidebar or create one.">
-            <Button onClick={() => handleCreate(null)}>New root document</Button>
-          </Card>
+          <EmptyState
+            glyph="✒"
+            title="Select a document"
+            description="Choose a document from the sidebar — or create a new root document to begin."
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button
+                  variant="secondary"
+                  className="lg:hidden"
+                  onClick={() => setMobileSidebarOpen(true)}
+                >
+                  Open documents
+                </Button>
+                <Button onClick={() => handleCreate(null)}>New root document</Button>
+              </div>
+            }
+          />
         )}
       </div>
 
       {aiPanelOpen ? (
-        <div className="min-h-0">
+        <div className="hidden min-h-0 lg:block">
+          <AIAssistantPanel
+            universeId={universeId}
+            selection={selectionText}
+            surrounding={surroundingText}
+            writingId={writing?.id}
+            onAccept={(text) => {
+              editorRef.current?.insertAtCursor(text);
+              setSaveStatus('dirty');
+            }}
+          />
+        </div>
+      ) : null}
+
+      {/* Mobile drawer: documents tree */}
+      <Modal
+        open={mobileSidebarOpen}
+        onClose={() => setMobileSidebarOpen(false)}
+        title="Documents"
+      >
+        {treeLoading ? (
+          <Spinner label="Loading…" />
+        ) : (
+          <div className="max-h-[60vh] overflow-auto">
+            <WritingTree
+              nodes={tree}
+              selectedId={selectedId}
+              onSelect={(id) => {
+                setSelectedId(id);
+                setMobileSidebarOpen(false);
+              }}
+              onCreate={handleCreate}
+              onDelete={(node) => void handleDelete(node)}
+            />
+          </div>
+        )}
+      </Modal>
+
+      {/* Mobile drawer: AI assistant — visible on tap from header on small screens */}
+      {aiPanelOpen ? (
+        <div className="lg:hidden">
           <AIAssistantPanel
             universeId={universeId}
             selection={selectionText}
@@ -363,6 +446,8 @@ export function WritingsPage() {
           />
         ) : null}
       </Modal>
+
+      <ConfirmDialogPortal />
 
       {saveError && saveStatus !== 'error' ? (
         <p className="text-sm text-accent-red">{saveError}</p>

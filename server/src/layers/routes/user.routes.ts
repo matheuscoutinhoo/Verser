@@ -10,6 +10,7 @@ export function createUserRouter(controller: UserController, authenticate: Reque
   router.use(authenticate);
 
   router.get('/me', asyncHandler(controller.me));
+  router.get('/me/stats', asyncHandler(controller.stats));
   router.patch('/me', validate(updateProfileSchema), asyncHandler(controller.updateProfile));
   router.patch(
     '/me/password',

@@ -44,6 +44,7 @@ import { TokenService } from './layers/services/token.service';
 import { UniverseService } from './layers/services/universe.service';
 import { UniverseTagService } from './layers/services/universe-tag.service';
 import { UserService } from './layers/services/user.service';
+import { UserStatsService } from './layers/services/user-stats.service';
 import { WorldSystemService } from './layers/services/world-system.service';
 import { WritingService } from './layers/services/writing.service';
 import { AbacusAIProvider } from './providers/ai/abacus-ai.provider';
@@ -75,6 +76,7 @@ export interface Container {
   tokenService: TokenService;
   authService: AuthService;
   userService: UserService;
+  userStatsService: UserStatsService;
   universeService: UniverseService;
   characterService: CharacterService;
   characterRelationService: CharacterRelationService;
@@ -139,6 +141,7 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
   const tokenService = new TokenService();
   const authService = new AuthService(userRepo, sessionRepo, tokenService);
   const userService = new UserService(userRepo, sessionRepo);
+  const userStatsService = new UserStatsService(prisma);
   const universeService = new UniverseService(universeRepo);
   const characterService = new CharacterService(characterRepo);
   const characterRelationService = new CharacterRelationService(
@@ -184,7 +187,7 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
 
   // Controllers
   const authController = new AuthController(authService);
-  const userController = new UserController(userService);
+  const userController = new UserController(userService, userStatsService);
   const universeController = new UniverseController(universeService);
   const characterController = new CharacterController(characterService);
   const characterRelationController = new CharacterRelationController(characterRelationService);
@@ -222,6 +225,7 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
     tokenService,
     authService,
     userService,
+    userStatsService,
     universeService,
     characterService,
     characterRelationService,

@@ -3,31 +3,52 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { UniverseWithCounts } from '@verser/shared';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { OrnateDivider } from '../components/ui/OrnateDivider';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { Spinner } from '../components/ui/Spinner';
+import { StatCard } from '../components/ui/StatCard';
+import { useConfirmDialog } from '../components/ui/useConfirmDialog';
 import { useAsync } from '../hooks/useAsync';
 import { universeService } from '../services/universe.service';
 
-const SECTIONS: Array<{ key: keyof UniverseWithCounts['counts']; label: string }> = [
-  { key: 'characters', label: 'Characters' },
-  { key: 'locations', label: 'Locations' },
-  { key: 'systems', label: 'Systems' },
-  { key: 'loreEntries', label: 'Lore' },
-  { key: 'immutableLaws', label: 'Laws' },
-  { key: 'timelineEvents', label: 'Timeline' },
-  { key: 'tags', label: 'Tags' },
-  { key: 'writings', label: 'Writings' },
+const SECTIONS: Array<{ key: keyof UniverseWithCounts['counts']; label: string; glyph: string }> = [
+  { key: 'characters', label: 'Characters', glyph: '☉' },
+  { key: 'locations', label: 'Locations', glyph: '◆' },
+  { key: 'systems', label: 'Systems', glyph: '✦' },
+  { key: 'loreEntries', label: 'Lore', glyph: '✧' },
+  { key: 'immutableLaws', label: 'Laws', glyph: '◈' },
+  { key: 'timelineEvents', label: 'Timeline', glyph: '◇' },
+  { key: 'tags', label: 'Tags', glyph: '◉' },
+  { key: 'writings', label: 'Writings', glyph: '✒' },
 ];
 
 export function UniverseDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
+  const { confirm, ConfirmDialogPortal } = useConfirmDialog();
 
   const fetchOne = useCallback(() => universeService.detail(id), [id]);
   const { data, status, error } = useAsync(fetchOne);
 
   async function handleDelete(): Promise<void> {
     if (!data) return;
-    if (!confirm(`Delete universe "${data.name}"? This cannot be undone.`)) return;
+    const ok = await confirm({
+      title: 'Delete universe?',
+      description: (
+        <>
+          <p>
+            <strong className="text-text-accent">{data.name}</strong> and all its characters,
+            locations, systems, lore, laws, timeline events, tags and writings will be permanently
+            removed.
+          </p>
+          <p className="mt-2 text-text-muted">This cannot be undone.</p>
+        </>
+      ),
+      confirmLabel: 'Delete forever',
+      destructive: true,
+    });
+    if (!ok) return;
     setDeleting(true);
     try {
       await universeService.delete(data.id);
@@ -38,7 +59,11 @@ export function UniverseDetailPage() {
   }
 
   if (status === 'loading' || status === 'idle') {
-    return <p className="text-text-secondary">Loading…</p>;
+    return (
+      <div className="py-10">
+        <Spinner label="Loading universe…" />
+      </div>
+    );
   }
 
   if (status === 'error' || !data) {
@@ -56,12 +81,15 @@ export function UniverseDetailPage() {
 
   return (
     <div className="space-y-8">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <Link to="/dashboard" className="text-xs uppercase tracking-widest text-text-secondary hover:text-text-primary">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <Link
+            to="/dashboard"
+            className="text-xs uppercase tracking-widest text-text-secondary hover:text-text-primary"
+          >
             ← All universes
           </Link>
-          <h1 className="mt-2 font-display text-4xl text-text-accent">{data.name}</h1>
+          <h1 className="mt-2 font-display text-3xl text-text-accent sm:text-4xl">{data.name}</h1>
           {data.genre ? (
             <p className="mt-1 font-ui text-xs uppercase tracking-widest text-text-secondary">
               {data.genre}
@@ -71,31 +99,28 @@ export function UniverseDetailPage() {
             <p className="mt-4 max-w-2xl text-text-primary/90">{data.description}</p>
           ) : null}
         </div>
-        <Button variant="danger" onClick={() => void handleDelete()} loading={deleting}>
-          Delete
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Link to={`/universes/${data.id}/write`}>
+            <Button>Open writing studio →</Button>
+          </Link>
+          <Button variant="danger" onClick={() => void handleDelete()} loading={deleting}>
+            Delete
+          </Button>
+        </div>
       </header>
 
-      <div className="ornate-divider" />
+      <OrnateDivider variant="diamond" />
 
-      <section className="flex justify-end">
-        <Link to={`/universes/${data.id}/write`}>
-          <Button>Open writing studio →</Button>
-        </Link>
-      </section>
-
-      <section>
-        <h2 className="mb-4 font-display text-xl text-text-accent">World bible</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="World bible">
+        <SectionHeader title="World bible" subtitle="Counts across every category of your universe." />
+        <div className="mt-4 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           {SECTIONS.map((section) => (
-            <Card key={section.key} className="text-center">
-              <p className="font-display text-3xl text-text-accent">
-                {data.counts[section.key]}
-              </p>
-              <p className="mt-1 text-xs uppercase tracking-widest text-text-secondary">
-                {section.label}
-              </p>
-            </Card>
+            <StatCard
+              key={section.key}
+              label={section.label}
+              value={data.counts[section.key]}
+              glyph={section.glyph}
+            />
           ))}
         </div>
       </section>
@@ -103,15 +128,17 @@ export function UniverseDetailPage() {
       <section>
         <Card
           title="Manage your worldbuilding"
-          subtitle="Per-entity editors land in upcoming Phase 2 iterations."
+          subtitle="Per-entity editors are part of Phase 5 polish."
         >
           <p className="text-sm text-text-secondary">
-            Characters, locations, systems, lore, immutable laws, timeline events, and tags can
-            already be managed through the API. UI editors are scheduled as the next Phase 2
-            increment.
+            Characters, locations, systems, lore, immutable laws, timeline events and tags can
+            already be managed through the API. The writing studio uses them automatically as
+            context for the AI assistant.
           </p>
         </Card>
       </section>
+
+      <ConfirmDialogPortal />
     </div>
   );
 }
