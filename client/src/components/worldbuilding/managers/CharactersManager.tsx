@@ -7,7 +7,8 @@ import { Textarea } from '../../ui/Textarea';
 import { useConfirmDialog } from '../../ui/useConfirmDialog';
 import { useEntityCrud } from '../../../hooks/useEntityCrud';
 import { charactersService } from '../../../services/worldbuilding.service';
-import { EntityListItem } from '../EntityListItem';
+import { CharacterCard } from '../CharacterCard';
+import { CharacterDetailModal } from '../CharacterDetailModal';
 import { InlineImagePicker } from '../InlineImagePicker';
 import { ManagerShell } from '../ManagerShell';
 import { AIImageGeneratorModal } from '../../ai/AIImageGeneratorModal';
@@ -111,6 +112,8 @@ export function CharactersManager({ universeId, onChange }: CharactersManagerPro
   // When the AI modal is opened from the create form (no character row yet),
   // we land the generated URL straight into the form state.
   const [aiOpenForCreate, setAiOpenForCreate] = useState(false);
+  // Character whose detail sheet is currently open (modal).
+  const [viewing, setViewing] = useState<Character | null>(null);
 
   function openCreate(): void {
     setEditing({ mode: 'create' });
@@ -219,27 +222,26 @@ export function CharactersManager({ universeId, onChange }: CharactersManagerPro
         </Button>
       }
     >
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {crud.items.map((c) => (
           <li key={c.id}>
-            <EntityListItem
-              title={c.name}
-              subtitle={c.aliases?.length ? `aka ${c.aliases.join(', ')}` : undefined}
-              imageUrl={c.imageUrl ?? undefined}
-              glyph="☉"
-              body={
-                c.personality || c.physicalDesc ? (
-                  <p className="line-clamp-3 text-text-secondary">
-                    {(c.personality ?? '') + (c.physicalDesc ? ` · ${c.physicalDesc}` : '')}
-                  </p>
-                ) : null
-              }
-              onEdit={() => openEdit(c)}
-              onDelete={() => void handleDelete(c)}
+            <CharacterCard
+              character={c}
+              onOpen={(picked) => setViewing(picked)}
+              onEdit={(picked) => openEdit(picked)}
+              onDelete={(picked) => void handleDelete(picked)}
             />
           </li>
         ))}
       </ul>
+
+      <CharacterDetailModal
+        character={viewing}
+        open={viewing !== null}
+        onClose={() => setViewing(null)}
+        onEdit={(picked) => openEdit(picked)}
+        onDelete={(picked) => void handleDelete(picked)}
+      />
 
       <Modal
         open={editing !== null}
