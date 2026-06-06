@@ -1,0 +1,293 @@
+// ════════════════════════════════════════════════════════════
+// Verser — Prisma Schema
+// SQLite for development; switch `provider` to "postgresql"
+// when migrating. JSON fields are stored as String for SQLite
+// compatibility (parse/stringify in repositories).
+// ════════════════════════════════════════════════════════════
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ════════════════════════════════════════════
+// USER & AUTH
+// ════════════════════════════════════════════
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  displayName   String
+  avatarUrl     String?
+  isActive      Boolean  @default(true)
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  universes   Universe[]
+  sessions    Session[]
+  aiUsageLogs AIUsageLog[]
+  writings    Writing[]
+
+  @@index([email])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique
+  userAgent    String?
+  ipAddress    String?
+  revokedAt    DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshToken])
+}
+
+// ════════════════════════════════════════════
+// UNIVERSE (WORLD BIBLE)
+// ════════════════════════════════════════════
+
+model Universe {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  coverUrl    String?
+  genre       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  characters         Character[]
+  locations          Location[]
+  systems            WorldSystem[]
+  loreEntries        LoreEntry[]
+  immutableLaws      ImmutableLaw[]
+  events             TimelineEvent[]
+  characterRelations CharacterRelation[]
+  writings           Writing[]
+  tags               UniverseTag[]
+
+  @@index([userId])
+}
+
+model Character {
+  id           String   @id @default(cuid())
+  universeId   String
+  name         String
+  aliases      String?
+  physicalDesc String?
+  personality  String?
+  backstory    String?
+  motivations  String?
+  arc          String?
+  notes        String?
+  imageUrl     String?
+  imageStyle   String?
+  customFields String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  universe Universe @relation(fields: [universeId], references: [id], onDelete: Cascade)
+
+  relationsFrom CharacterRelation[] @relation("RelationFrom")
+  relationsTo   CharacterRelation[] @relation("RelationTo")
+
+  @@index([universeId])
+}
+
+model CharacterRelation {
+  id              String   @id @default(cuid())
+  universeId      String
+  fromCharacterId String
+  toCharacterId   String
+  relationType    String
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  universe      Universe  @relation(fields: [universeId], references: [id], onDelete: Cascade)
+  fromCharacter Character @relation("RelationFrom", fields: [fromCharacterId], references: [id], onDelete: Cascade)
+  toCharacter   Character @relation("RelationTo", fields: [toCharacterId], references: [id], onDelete: Cascade)
+
+  @@unique([fromCharacterId, toCharacterId, relationType])
+  @@index([universeId])
+}
+
+model Location {
+  id           String   @id @default(cuid())
+  universeId   String
+  name         String
+  description  String?
+  geography    String?
+  culture      String?
+  history      String?
+  climate      String?
+  population   String?
+  imageUrl     String?
+  imageStyle   String?
+  customFields String?
+  parentId     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  universe Universe   @relation(fields: [universeId], references: [id], onDelete: Cascade)
+  parent   Location?  @relation("LocationHierarchy", fields: [parentId], references: [id])
+  children Location[] @relation("LocationHierarchy")
+
+  @@index([universeId])
+  @@index([parentId])
+}
+
+model WorldSystem {
+  id           String   @id @default(cuid())
+  universeId   String
+  name         String
+  type         String
+  description  String?
+  rules        String?
+  limitations  String?
+  interactions String?
+  customFields String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  universe Universe @relation(fields: [universeId], references: [id], onDelete: Cascade)
+
+  @@index([universeId])
+}
+
+model LoreEntry {
+  id           String   @id @default(cuid())
+  universeId   String
+  title        String
+  category     String
+  content      String
+  importance   String   @default("normal")
+  customFields String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  universe Universe @relation(fields: [universeId], references: [id], onDelete: Cascade)
+
+  @@index([universeId])
+  @@index([category])
+}
+
+model ImmutableLaw {
+  id          String   @id @default(cuid())
+  universeId  String
+  title       String
+  description String
+  category    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  universe Universe @relation(fields: [universeId], references: [id], onDelete: Cascade)
+
+  @@index([universeId])
+}
+
+model TimelineEvent {
+  id          String   @id @default(cuid())
+  universeId  String
+  title       String
+  description String?
+  date        String
+  sortOrder   Int
+  importance  String   @default("normal")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  universe Universe @relation(fields: [universeId], references: [id], onDelete: Cascade)
+
+  @@index([universeId])
+  @@index([sortOrder])
+}
+
+model UniverseTag {
+  id         String   @id @default(cuid())
+  universeId String
+  name       String
+  color      String?
+  createdAt  DateTime @default(now())
+
+  universe Universe @relation(fields: [universeId], references: [id], onDelete: Cascade)
+
+  @@unique([universeId, name])
+}
+
+// ════════════════════════════════════════════
+// WRITING
+// ════════════════════════════════════════════
+
+model Writing {
+  id           String   @id @default(cuid())
+  universeId   String
+  userId       String
+  title        String
+  content      String   @default("")
+  contentPlain String   @default("")
+  wordCount    Int      @default(0)
+  sortOrder    Int      @default(0)
+  parentId     String?
+  type         String   @default("chapter")
+  status       String   @default("draft")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  universe Universe         @relation(fields: [universeId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   Writing?         @relation("WritingHierarchy", fields: [parentId], references: [id])
+  children Writing[]        @relation("WritingHierarchy")
+  versions WritingVersion[]
+
+  @@index([universeId])
+  @@index([userId])
+  @@index([parentId])
+}
+
+model WritingVersion {
+  id        String   @id @default(cuid())
+  writingId String
+  content   String
+  wordCount Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  writing Writing @relation(fields: [writingId], references: [id], onDelete: Cascade)
+
+  @@index([writingId])
+}
+
+// ════════════════════════════════════════════
+// AI USAGE
+// ════════════════════════════════════════════
+
+model AIUsageLog {
+  id           String   @id @default(cuid())
+  userId       String
+  action       String
+  tokensInput  Int      @default(0)
+  tokensOutput Int      @default(0)
+  model        String
+  cost         Float    @default(0)
+  metadata     String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}

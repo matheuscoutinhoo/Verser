@@ -1,0 +1,87 @@
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image: radial-gradient(
+      120% 80% at 50% 0%,
+      rgba(196, 162, 101, 0.06),
+      transparent 60%
+    );
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+  }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-primary);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-ornate);
+  }
+
+  *:focus-visible {
+    outline: 1px solid var(--accent-gold);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .surface-card {
+    background: var(--surface-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+  }
+  .surface-card:hover {
+    border-color: var(--border-ornate);
+    box-shadow: 0 2px 14px -4px rgba(196, 162, 101, 0.35);
+  }
+
+  .ornate-divider {
+    position: relative;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--border-ornate) 50%,
+      transparent
+    );
+  }
+
+  .editor-surface {
+    font-family: var(--font-editor);
+    font-size: var(--font-size-editor);
+    line-height: 1.75;
+    color: var(--text-primary);
+  }
+}

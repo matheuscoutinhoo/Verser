@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "noEmit": false,
+    "sourceMap": true,
+    "declaration": false,
+    "declarationMap": false,
+    "paths": {
+      "@verser/shared": ["../packages/shared/dist/cjs"],
+      "@verser/shared/*": ["../packages/shared/dist/cjs/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "coverage", "tests", "prisma"]
+}

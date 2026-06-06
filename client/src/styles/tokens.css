@@ -1,0 +1,36 @@
+:root {
+  /* Backgrounds */
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #111118;
+  --bg-tertiary: #1a1a24;
+  --bg-hover: #22222e;
+
+  /* Borders / ornaments */
+  --border-primary: #2a2a3a;
+  --border-ornate: #8b7355;
+  --border-glow: #c4a265;
+
+  /* Text */
+  --text-primary: #e8e4dc;
+  --text-secondary: #9a9484;
+  --text-muted: #5a5650;
+  --text-accent: #c4a265;
+
+  /* Accents */
+  --accent-gold: #c4a265;
+  --accent-gold-light: #d4b87a;
+  --accent-red: #8b3a3a;
+  --accent-green: #3a6b3a;
+  --accent-blue: #3a4a6b;
+
+  /* Surfaces */
+  --surface-card: rgba(17, 17, 24, 0.85);
+  --surface-modal: rgba(10, 10, 15, 0.95);
+  --surface-overlay: rgba(0, 0, 0, 0.7);
+
+  /* Typography */
+  --font-display: 'Cinzel', 'Cormorant Garamond', serif;
+  --font-editor: 'Inter', sans-serif;
+  --font-ui: 'Inter', 'Segoe UI', sans-serif;
+  --font-size-editor: 12pt;
+}

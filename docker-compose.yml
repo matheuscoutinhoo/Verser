@@ -1,0 +1,27 @@
+version: '3.9'
+
+# Development services for Verser.
+# SQLite is used initially (file-based, no service needed).
+# This compose file is reserved for future PostgreSQL migration.
+
+services:
+  # Uncomment when migrating from SQLite to PostgreSQL
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: verser-postgres
+  #   environment:
+  #     POSTGRES_USER: verser
+  #     POSTGRES_PASSWORD: verser_dev_password
+  #     POSTGRES_DB: verser
+  #   ports:
+  #     - '5432:5432'
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ['CMD-SHELL', 'pg_isready -U verser']
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+# volumes:
+#   postgres_data:
