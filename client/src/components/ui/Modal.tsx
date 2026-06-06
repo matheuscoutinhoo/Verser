@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface ModalProps {
   open: boolean;
@@ -34,12 +35,16 @@ export function Modal({ open, onClose, title, children, size = 'lg' }: ModalProp
   }, [open, onClose]);
 
   if (!open) return null;
+  // SSR-safe guard.
+  if (typeof document === 'undefined') return null;
 
-  return (
-    // Overlay is itself a scroll container. On tall content + short viewports
-    // the modal stays anchored to the top so the user can scroll the whole
-    // dialog without anything being clipped off-screen; on roomy viewports
-    // the dialog sits centred.
+  // Portal to <body> so `position: fixed` is always relative to the viewport,
+  // not to any ancestor that happens to set `transform` / `filter` /
+  // `perspective` (which, per CSS spec, become the containing block for
+  // fixed descendants). Layout's <main> uses `anim-fade-up` whose final
+  // keyframe leaves `transform: translateY(0)` applied — without this
+  // portal the modal would be clipped to <main>'s `max-w-7xl` width.
+  return createPortal(
     <div
       className="anim-fade-in fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-6 backdrop-blur-sm sm:items-center sm:py-10"
       role="dialog"
@@ -51,8 +56,8 @@ export function Modal({ open, onClose, title, children, size = 'lg' }: ModalProp
           'surface-modal anim-scale-in flex w-full flex-col',
           SIZE_CLASS[size],
           // Cap height to 90% of the dynamic viewport so the modal never
-          // exceeds the screen, leaves a visible halo of overlay around it,
-          // and `flex flex-col` lets the body scroll internally.
+          // exceeds the screen, leaves a halo of overlay around it, and
+          // `flex flex-col` lets the body scroll internally.
           'max-h-[90dvh]',
         ].join(' ')}
         onClick={(e) => e.stopPropagation()}
@@ -74,6 +79,7 @@ export function Modal({ open, onClose, title, children, size = 'lg' }: ModalProp
         ) : null}
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
