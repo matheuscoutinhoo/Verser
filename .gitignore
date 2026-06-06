@@ -1,3 +1,4 @@
+﻿
 # Dependencies
 node_modules/
 .pnp
@@ -63,3 +64,6 @@ prisma/migrations/migration_lock.toml.bak
 
 # AGENTS
 AGENTS.md
+
+# Local commit message scratch
+.commit_msg.tmp

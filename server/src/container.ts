@@ -13,6 +13,7 @@ import { UniverseTagController } from './layers/controllers/universe-tag.control
 import { UploadController } from './layers/controllers/upload.controller';
 import { UserController } from './layers/controllers/user.controller';
 import { WorldSystemController } from './layers/controllers/world-system.controller';
+import { WritingController } from './layers/controllers/writing.controller';
 import { CharacterRepository } from './layers/repositories/character.repository';
 import { CharacterRelationRepository } from './layers/repositories/character-relation.repository';
 import { ImmutableLawRepository } from './layers/repositories/immutable-law.repository';
@@ -24,6 +25,8 @@ import { UniverseRepository } from './layers/repositories/universe.repository';
 import { UniverseTagRepository } from './layers/repositories/universe-tag.repository';
 import { UserRepository } from './layers/repositories/user.repository';
 import { WorldSystemRepository } from './layers/repositories/world-system.repository';
+import { WritingRepository } from './layers/repositories/writing.repository';
+import { WritingVersionRepository } from './layers/repositories/writing-version.repository';
 import { AuthService } from './layers/services/auth.service';
 import { CharacterService } from './layers/services/character.service';
 import { CharacterRelationService } from './layers/services/character-relation.service';
@@ -36,6 +39,7 @@ import { UniverseService } from './layers/services/universe.service';
 import { UniverseTagService } from './layers/services/universe-tag.service';
 import { UserService } from './layers/services/user.service';
 import { WorldSystemService } from './layers/services/world-system.service';
+import { WritingService } from './layers/services/writing.service';
 import { AbacusAIProvider } from './providers/ai/abacus-ai.provider';
 import { MockAIProvider } from './providers/ai/mock-ai.provider';
 import type { IAIProvider } from './providers/ai/types';
@@ -57,6 +61,8 @@ export interface Container {
   immutableLawRepo: ImmutableLawRepository;
   timelineEventRepo: TimelineEventRepository;
   universeTagRepo: UniverseTagRepository;
+  writingRepo: WritingRepository;
+  writingVersionRepo: WritingVersionRepository;
 
   // Services
   tokenService: TokenService;
@@ -71,6 +77,7 @@ export interface Container {
   immutableLawService: ImmutableLawService;
   timelineEventService: TimelineEventService;
   universeTagService: UniverseTagService;
+  writingService: WritingService;
 
   // Controllers
   authController: AuthController;
@@ -85,6 +92,7 @@ export interface Container {
   timelineEventController: TimelineEventController;
   universeTagController: UniverseTagController;
   uploadController: UploadController;
+  writingController: WritingController;
 
   // Providers
   aiProvider: IAIProvider;
@@ -112,6 +120,8 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
   const immutableLawRepo = new ImmutableLawRepository(prisma);
   const timelineEventRepo = new TimelineEventRepository(prisma);
   const universeTagRepo = new UniverseTagRepository(prisma);
+  const writingRepo = new WritingRepository(prisma);
+  const writingVersionRepo = new WritingVersionRepository(prisma);
 
   // Services
   const tokenService = new TokenService();
@@ -129,6 +139,7 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
   const immutableLawService = new ImmutableLawService(immutableLawRepo);
   const timelineEventService = new TimelineEventService(timelineEventRepo);
   const universeTagService = new UniverseTagService(universeTagRepo);
+  const writingService = new WritingService({ writingRepo, versionRepo: writingVersionRepo });
 
   // Providers
   const aiProvider: IAIProvider =
@@ -154,6 +165,7 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
     characterService,
     locationService,
   );
+  const writingController = new WritingController(writingService);
 
   return {
     prisma,
@@ -168,6 +180,8 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
     immutableLawRepo,
     timelineEventRepo,
     universeTagRepo,
+    writingRepo,
+    writingVersionRepo,
     tokenService,
     authService,
     userService,
@@ -180,6 +194,7 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
     immutableLawService,
     timelineEventService,
     universeTagService,
+    writingService,
     authController,
     userController,
     universeController,
@@ -192,6 +207,7 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
     timelineEventController,
     universeTagController,
     uploadController,
+    writingController,
     aiProvider,
     storageProvider,
   };

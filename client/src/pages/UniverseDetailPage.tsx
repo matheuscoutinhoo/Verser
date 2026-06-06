@@ -78,6 +78,12 @@ export function UniverseDetailPage() {
 
       <div className="ornate-divider" />
 
+      <section className="flex justify-end">
+        <Link to={`/universes/${data.id}/write`}>
+          <Button>Open writing studio →</Button>
+        </Link>
+      </section>
+
       <section>
         <h2 className="mb-4 font-display text-xl text-text-accent">World bible</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

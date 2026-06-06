@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { UniverseDetailPage } from './pages/UniverseDetailPage';
+import { WritingsPage } from './pages/WritingsPage';
 import { useAuthStore } from './stores/auth.store';
 
 export function App() {
@@ -37,6 +38,14 @@ export function App() {
             element={
               <RequireAuth>
                 <UniverseDetailPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/universes/:id/write"
+            element={
+              <RequireAuth>
+                <WritingsPage />
               </RequireAuth>
             }
           />

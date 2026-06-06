@@ -32,6 +32,15 @@ export type WritingType = (typeof WRITING_TYPE)[number];
 export const WRITING_STATUS = ['draft', 'revision', 'final'] as const;
 export type WritingStatus = (typeof WRITING_STATUS)[number];
 
+export const WRITING = {
+  /** Debounced auto-save delay after the last edit (RN011). */
+  AUTOSAVE_DEBOUNCE_MS: 30 * 1000,
+  /** Word-delta that automatically triggers a `WritingVersion` snapshot (RN012). */
+  AUTO_SNAPSHOT_WORD_DELTA: 100,
+  /** Default font size for the editor surface (RN014). */
+  EDITOR_FONT_SIZE_PT: 12,
+} as const;
+
 export const IMAGE_STYLE = ['2d', '3d', 'realistic', 'anime', 'pixel_art', 'concept_art'] as const;
 export type ImageStyle = (typeof IMAGE_STYLE)[number];
 

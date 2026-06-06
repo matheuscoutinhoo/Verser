@@ -21,3 +21,14 @@ export function safeJsonParse<T>(value: string | null | undefined, fallback: T):
 export function safeJsonStringify(value: unknown): string {
   return JSON.stringify(value ?? null);
 }
+
+/**
+ * Counts whitespace-separated tokens in `text` after collapsing all whitespace.
+ * Returns 0 for empty/null/undefined.
+ */
+export function countWords(text: string | null | undefined): number {
+  if (!text) return 0;
+  const trimmed = text.trim();
+  if (trimmed === '') return 0;
+  return trimmed.split(/\s+/u).length;
+}

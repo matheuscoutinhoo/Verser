@@ -1,8 +1,11 @@
 import { Router, type RequestHandler } from 'express';
 import {
+  createWritingSchema,
+  createWritingVersionSchema,
   idParamSchema,
   paginationSchema,
   reorderTimelineSchema,
+  reorderWritingsSchema,
   updateCharacterRelationSchema,
   updateCharacterSchema,
   updateImmutableLawSchema,
@@ -10,6 +13,7 @@ import {
   updateLoreEntrySchema,
   updateTimelineEventSchema,
   updateWorldSystemSchema,
+  updateWritingSchema,
   upsertCharacterRelationSchema,
   upsertCharacterSchema,
   upsertImmutableLawSchema,
@@ -43,6 +47,7 @@ export function createUniverseChildrenRouter(
     timelineEventController: tl,
     universeTagController: tag,
     uploadController: up,
+    writingController: wr,
   } = container;
 
   // ── Cover image upload ─────────────────────────
@@ -198,6 +203,42 @@ export function createUniverseChildrenRouter(
   router.get('/tags', asyncHandler(tag.list));
   router.post('/tags', validate(upsertUniverseTagSchema), asyncHandler(tag.create));
   router.delete('/tags/:id', validate(idParamSchema, 'params'), asyncHandler(tag.delete));
+
+  // ── Writings (hierarchical tree) ───────────────
+  router.get('/writings', asyncHandler(wr.tree));
+  router.post('/writings', validate(createWritingSchema), asyncHandler(wr.create));
+  router.patch(
+    '/writings/reorder',
+    validate(reorderWritingsSchema),
+    asyncHandler(wr.reorder),
+  );
+  router.get(
+    '/writings/:id',
+    validate(idParamSchema, 'params'),
+    asyncHandler(wr.detail),
+  );
+  router.patch(
+    '/writings/:id',
+    validate(idParamSchema, 'params'),
+    validate(updateWritingSchema),
+    asyncHandler(wr.update),
+  );
+  router.delete(
+    '/writings/:id',
+    validate(idParamSchema, 'params'),
+    asyncHandler(wr.delete),
+  );
+  router.get(
+    '/writings/:id/versions',
+    validate(idParamSchema, 'params'),
+    asyncHandler(wr.listVersions),
+  );
+  router.post(
+    '/writings/:id/versions',
+    validate(idParamSchema, 'params'),
+    validate(createWritingVersionSchema),
+    asyncHandler(wr.createVersion),
+  );
 
   return router;
 }

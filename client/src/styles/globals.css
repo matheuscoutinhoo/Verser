@@ -84,4 +84,70 @@
     line-height: 1.75;
     color: var(--text-primary);
   }
+
+  /* TipTap content styling. */
+  .tiptap p {
+    margin: 0 0 1em 0;
+  }
+  .tiptap h1 {
+    font-family: var(--font-display);
+    color: var(--text-accent);
+    font-size: 2em;
+    margin: 1.2em 0 0.6em;
+  }
+  .tiptap h2 {
+    font-family: var(--font-display);
+    color: var(--text-accent);
+    font-size: 1.6em;
+    margin: 1.2em 0 0.5em;
+  }
+  .tiptap h3 {
+    font-family: var(--font-display);
+    color: var(--text-accent);
+    font-size: 1.3em;
+    margin: 1em 0 0.4em;
+  }
+  .tiptap h4,
+  .tiptap h5,
+  .tiptap h6 {
+    font-family: var(--font-display);
+    color: var(--text-accent);
+    margin: 0.8em 0 0.3em;
+  }
+  .tiptap ul,
+  .tiptap ol {
+    padding-left: 1.5em;
+    margin: 0 0 1em;
+  }
+  .tiptap ul {
+    list-style: disc;
+  }
+  .tiptap ol {
+    list-style: decimal;
+  }
+  .tiptap blockquote {
+    border-left: 2px solid var(--border-ornate);
+    padding-left: 1em;
+    margin: 1em 0;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+  .tiptap hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border-ornate), transparent);
+    margin: 1.5em 0;
+  }
+  .tiptap a {
+    color: var(--text-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--text-muted);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
 }
