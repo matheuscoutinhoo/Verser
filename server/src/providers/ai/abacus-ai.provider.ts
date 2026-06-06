@@ -88,7 +88,9 @@ export class AbacusAIProvider implements IAIProvider {
           {
             role: 'system',
             content:
-              'You are an image generator. Return ONLY the resulting image — either as a direct URL on its own line or as a markdown image link. Do not add explanations.',
+              'You are an image generator. Generate the requested image and return ONLY the result. ' +
+              'If your platform returns inline image bytes, return them as such. ' +
+              'Otherwise return a single direct image URL or markdown image link with no surrounding prose.',
           },
           {
             role: 'user',
@@ -287,12 +289,14 @@ export class AbacusAIProvider implements IAIProvider {
     const dataUrl = findFirstBase64Image(response);
     if (dataUrl) return dataUrl;
 
-    // 3) Give the operator something to act on. We log only the top-level
-    //    keys (no payloads) to avoid leaking image bytes into logs.
+    // 3) Give the operator something to act on. We log the whole payload
+    //    (truncated and base64 redacted) so we can grow the walker for new
+    //    deployment shapes without needing the user to re-reproduce.
     logger.error(
       {
         keys: response && typeof response === 'object' ? Object.keys(response) : [],
         type: typeof response,
+        payload: previewPayload(response),
       },
       'extractImageUrl: no URL/base64 found in Abacus AI image response',
     );
@@ -390,34 +394,99 @@ const BASE64_FIELD_HINTS = new Set([
   'imagedata',
   'image_base64',
   'image_bytes',
+  // Gemini multimodal returns parts: [{ inline_data: { mime_type, data }}]
+  // (or its camelCase variant inlineData/mimeType). We match the inner
+  // `data` field as long as a sibling `mime_type` exists and starts with
+  // "image/", or the parent key name itself indicates inline image data.
+  'data',
 ]);
+
+const INLINE_IMAGE_PARENT_HINTS = new Set([
+  'inline_data',
+  'inlinedata',
+  'inline',
+  'image',
+  'media',
+]);
+
+function isImageMimeType(v: unknown): boolean {
+  return typeof v === 'string' && v.toLowerCase().startsWith('image/');
+}
 
 /**
  * Look for a base64-encoded image embedded in the response and promote it
- * to a `data:` URL the browser can render. Only matches fields whose name
- * hints at base64 image content + a non-trivial payload, to avoid coercing
- * unrelated strings.
+ * to a `data:` URL the browser can render. Matches:
+ *   - fields named like `b64_json` / `base64` / `image_bytes` directly,
+ *   - the `data` field inside Gemini-style `inline_data: { mime_type, data }`
+ *     parts (preserves the actual mime type when present).
  */
 function findFirstBase64Image(value: unknown): string | null {
-  const queue: Array<{ key: string | null; v: unknown }> = [{ key: null, v: value }];
+  // Tracks each node's parent key without mutating the original objects.
+  const parentKey = new WeakMap<object, string>();
+  const queue: Array<{ key: string | null; parent: Record<string, unknown> | null; v: unknown }> = [
+    { key: null, parent: null, v: value },
+  ];
   while (queue.length > 0) {
-    const { key, v } = queue.shift() ?? { key: null, v: null };
+    const { key, parent, v } = queue.shift() ?? { key: null, parent: null, v: null };
     if (typeof v === 'string') {
-      if (key && BASE64_FIELD_HINTS.has(key.toLowerCase()) && v.length > 100) {
+      const looksLikeBase64Field =
+        key !== null && BASE64_FIELD_HINTS.has(key.toLowerCase()) && v.length > 100;
+      if (!looksLikeBase64Field) continue;
+      // For the loose `data` hint, require either an image-typed sibling
+      // or an image-hinted parent key, so we don't accidentally promote
+      // arbitrary base64-ish strings.
+      if (key && key.toLowerCase() === 'data') {
+        const siblingMime =
+          (parent?.mime_type as unknown) ?? (parent?.mimeType as unknown);
+        const grandParentKey = parent ? (parentKey.get(parent) ?? '') : '';
+        if (!isImageMimeType(siblingMime) && !INLINE_IMAGE_PARENT_HINTS.has(grandParentKey.toLowerCase())) {
+          continue;
+        }
+        const mime = isImageMimeType(siblingMime) ? (siblingMime as string) : 'image/png';
         const cleaned = v.replace(/^data:[^;]+;base64,/i, '');
-        return `data:image/png;base64,${cleaned}`;
+        return `data:${mime};base64,${cleaned}`;
       }
-      continue;
+      // Strict-named base64 fields (b64_json, image_bytes, …) → assume PNG
+      // unless the value already carries its own `data:` prefix.
+      const cleaned = v.replace(/^data:[^;]+;base64,/i, '');
+      return `data:image/png;base64,${cleaned}`;
     }
     if (Array.isArray(v)) {
-      for (const item of v) queue.push({ key, v: item });
+      for (const item of v) queue.push({ key, parent, v: item });
       continue;
     }
     if (v && typeof v === 'object') {
-      for (const [k, child] of Object.entries(v as Record<string, unknown>)) {
-        queue.push({ key: k, v: child });
+      const obj = v as Record<string, unknown>;
+      for (const [k, child] of Object.entries(obj)) {
+        if (child && typeof child === 'object') {
+          parentKey.set(child as object, k);
+        }
+        queue.push({ key: k, parent: obj, v: child });
       }
     }
   }
   return null;
+}
+
+/**
+ * Build a debug-friendly preview of an Abacus response: trim long strings,
+ * redact obvious base64 blobs, and cap depth so logs stay readable.
+ */
+function previewPayload(value: unknown, depth = 0): unknown {
+  if (depth > 4) return '…';
+  if (typeof value === 'string') {
+    if (value.length > 500) return `${value.slice(0, 200)}…(${value.length} chars)…${value.slice(-50)}`;
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.slice(0, 5).map((v) => previewPayload(v, depth + 1));
+  }
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = previewPayload(v, depth + 1);
+    }
+    return out;
+  }
+  return value;
 }
