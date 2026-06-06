@@ -77,6 +77,7 @@ export interface UpsertCharacterRequest {
   motivations?: string | null;
   skills?: string | null;
   notes?: string | null;
+  imageUrl?: string | null;
   imageStyle?: string | null;
   customFields?: Record<string, unknown>;
 }
@@ -141,6 +142,7 @@ export interface UpsertLocationRequest {
   history?: string | null;
   climate?: string | null;
   population?: string | null;
+  imageUrl?: string | null;
   imageStyle?: string | null;
   customFields?: Record<string, unknown>;
   parentId?: string | null;

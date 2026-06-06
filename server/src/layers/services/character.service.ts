@@ -62,6 +62,7 @@ export class CharacterService {
       motivations: input.motivations ?? null,
       skills: input.skills ?? null,
       notes: input.notes ?? null,
+      imageUrl: input.imageUrl ?? null,
       imageStyle: input.imageStyle ?? null,
       customFields: input.customFields ? stringifyJsonField(input.customFields) : null,
     });

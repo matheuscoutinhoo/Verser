@@ -70,6 +70,7 @@ export const upsertCharacterSchema = z.object({
   motivations: longTextSchema,
   skills: longTextSchema,
   notes: longTextSchema,
+  imageUrl: z.string().url().nullable().optional(),
   imageStyle: z.string().trim().max(30).nullable().optional(),
   customFields: customFieldsSchema,
 });
@@ -120,6 +121,7 @@ export const upsertLocationSchema = z.object({
   history: longTextSchema,
   climate: shortTextSchema,
   population: shortTextSchema,
+  imageUrl: z.string().url().nullable().optional(),
   imageStyle: z.string().trim().max(30).nullable().optional(),
   customFields: customFieldsSchema,
   parentId: z.string().min(1).nullable().optional(),

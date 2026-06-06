@@ -67,6 +67,7 @@ export class LocationService {
       history: input.history ?? null,
       climate: input.climate ?? null,
       population: input.population ?? null,
+      imageUrl: input.imageUrl ?? null,
       imageStyle: input.imageStyle ?? null,
       customFields: input.customFields ? stringifyJsonField(input.customFields) : null,
       ...(input.parentId ? { parent: { connect: { id: input.parentId } } } : {}),

@@ -31,6 +31,12 @@ interface FormState {
   motivations: string;
   skills: string;
   notes: string;
+  /** Persisted (server) URL when editing, or AI-generated URL when creating. */
+  imageUrl: string | null;
+  /** Local-only object URL for previewing an uploaded-but-not-yet-saved file. */
+  previewUrl: string | null;
+  /** File staged during creation; uploaded after the character row exists. */
+  pendingFile: File | null;
 }
 
 const EMPTY_FORM: FormState = {
@@ -42,6 +48,9 @@ const EMPTY_FORM: FormState = {
   motivations: '',
   skills: '',
   notes: '',
+  imageUrl: null,
+  previewUrl: null,
+  pendingFile: null,
 };
 
 function characterToForm(c: Character): FormState {
@@ -54,6 +63,9 @@ function characterToForm(c: Character): FormState {
     motivations: c.motivations ?? '',
     skills: c.skills ?? '',
     notes: c.notes ?? '',
+    imageUrl: c.imageUrl ?? null,
+    previewUrl: null,
+    pendingFile: null,
   };
 }
 
@@ -69,6 +81,10 @@ function formToInput(form: FormState): UpsertCharacterInput {
     motivations: form.motivations.trim() || null,
     skills: form.skills.trim() || null,
     notes: form.notes.trim() || null,
+    // Only send AI-generated remote URLs at create time. Local uploads
+    // happen as a second step against the new character's id (see
+    // handleSubmit below) since the upload endpoint needs that id.
+    imageUrl: form.imageUrl ?? undefined,
   };
 }
 
@@ -92,6 +108,9 @@ export function CharactersManager({ universeId, onChange }: CharactersManagerPro
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [aiTarget, setAiTarget] = useState<Character | null>(null);
+  // When the AI modal is opened from the create form (no character row yet),
+  // we land the generated URL straight into the form state.
+  const [aiOpenForCreate, setAiOpenForCreate] = useState(false);
 
   function openCreate(): void {
     setEditing({ mode: 'create' });
@@ -105,6 +124,12 @@ export function CharactersManager({ universeId, onChange }: CharactersManagerPro
     setSubmitError(null);
   }
 
+  function closeForm(): void {
+    // Free the staged preview's object URL to avoid leaking blob memory.
+    if (form.previewUrl) URL.revokeObjectURL(form.previewUrl);
+    setEditing(null);
+  }
+
   async function handleSubmit(): Promise<void> {
     if (!editing) return;
     const input = formToInput(form);
@@ -114,11 +139,28 @@ export function CharactersManager({ universeId, onChange }: CharactersManagerPro
     }
     try {
       if (editing.mode === 'create') {
-        await crud.create(input);
+        const created = await crud.create(input);
+        // Two-step: if a local file was staged, upload it now that the row
+        // exists. The upload endpoint requires the new character's id.
+        if (form.pendingFile && created) {
+          try {
+            await charactersService.uploadImage(universeId, created.id, form.pendingFile);
+            await crud.refresh();
+          } catch (err) {
+            // The character itself was created successfully; surface the
+            // upload failure but don't roll back.
+            setSubmitError(
+              err instanceof Error
+                ? `Character created, but image upload failed: ${err.message}`
+                : 'Character created, but image upload failed.',
+            );
+            return;
+          }
+        }
       } else {
         await crud.update(editing.character.id, input);
       }
-      setEditing(null);
+      closeForm();
       onChange?.();
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Could not save character.');
@@ -201,7 +243,7 @@ export function CharactersManager({ universeId, onChange }: CharactersManagerPro
 
       <Modal
         open={editing !== null}
-        onClose={() => setEditing(null)}
+        onClose={closeForm}
         title={editing?.mode === 'edit' ? `Edit ${editing.character.name}` : 'New character'}
       >
         <form
@@ -211,15 +253,43 @@ export function CharactersManager({ universeId, onChange }: CharactersManagerPro
             void handleSubmit();
           }}
         >
-          {editing?.mode === 'edit' ? (
+          {editing ? (
             <div className="flex flex-col gap-2">
               <label className="font-ui text-xs uppercase tracking-wider text-text-secondary">
                 Portrait
               </label>
               <InlineImagePicker
-                currentUrl={editing.character.imageUrl}
-                onUpload={async (file) => handleImageUpload(editing.character, file)}
-                onGenerate={() => setAiTarget(editing.character)}
+                currentUrl={
+                  // Prefer the local preview while the form is open so the
+                  // user immediately sees the image they just picked or
+                  // generated; fall back to the persisted URL for edit mode.
+                  form.previewUrl ??
+                  form.imageUrl ??
+                  (editing.mode === 'edit' ? editing.character.imageUrl : null)
+                }
+                onUpload={async (file) => {
+                  if (editing.mode === 'edit') {
+                    return handleImageUpload(editing.character, file);
+                  }
+                  // Create mode: stage the file locally for upload-after-create.
+                  // We render an object URL just for the preview.
+                  const objectUrl = URL.createObjectURL(file);
+                  setForm((prev) => ({
+                    ...prev,
+                    pendingFile: file,
+                    previewUrl: objectUrl,
+                    // Clear any AI URL — user picked a file over the AI one.
+                    imageUrl: null,
+                  }));
+                  return objectUrl;
+                }}
+                onGenerate={() => {
+                  if (editing.mode === 'edit') {
+                    setAiTarget(editing.character);
+                  } else {
+                    setAiOpenForCreate(true);
+                  }
+                }}
               />
             </div>
           ) : null}
@@ -269,7 +339,7 @@ export function CharactersManager({ universeId, onChange }: CharactersManagerPro
           />
           {submitError ? <p className="text-sm text-accent-red">{submitError}</p> : null}
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="secondary" onClick={() => setEditing(null)}>
+            <Button type="button" variant="secondary" onClick={closeForm}>
               Cancel
             </Button>
             <Button type="submit" loading={crud.mutating}>
@@ -290,6 +360,25 @@ export function CharactersManager({ universeId, onChange }: CharactersManagerPro
           onAccept={(url) => handleAIAccept(aiTarget, url)}
         />
       ) : null}
+
+      {/* AI generator for the create form — lands the URL into the form
+          state instead of patching a non-existent character. */}
+      <AIImageGeneratorModal
+        open={aiOpenForCreate}
+        onClose={() => setAiOpenForCreate(false)}
+        universeId={universeId}
+        defaultPrompt={`Portrait of ${form.name || 'this character'}${
+          form.physicalDesc ? `: ${form.physicalDesc}` : ''
+        }`}
+        onAccept={(url) => {
+          setForm((prev) => {
+            // Free the previous object URL if we had one staged.
+            if (prev.previewUrl) URL.revokeObjectURL(prev.previewUrl);
+            return { ...prev, imageUrl: url, previewUrl: null, pendingFile: null };
+          });
+          setAiOpenForCreate(false);
+        }}
+      />
 
       <ConfirmDialogPortal />
     </ManagerShell>
