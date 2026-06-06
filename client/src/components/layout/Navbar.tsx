@@ -3,11 +3,6 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
 
-const navLinks = [
-  { label: 'Home', to: '/' },
-  { label: 'Universes', to: '/dashboard' },
-];
-
 export function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
@@ -24,36 +19,19 @@ export function Navbar() {
     navigate('/login');
   }
 
+  // Wordmark is the only nav target — for authenticated users `/` redirects
+  // to /dashboard, so Home/Universes links would be redundant.
+
   return (
     <header className="sticky top-0 z-40 border-b border-border-primary bg-bg-primary/70 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         <NavLink
-          to="/"
+          to={isAuthenticated ? '/dashboard' : '/'}
           className="font-display text-lg tracking-[0.35em] text-text-accent transition-colors hover:text-accent-gold-light"
+          aria-label="Verser home"
         >
           VERSER
         </NavLink>
-
-        <nav className="hidden gap-6 md:flex">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              className={({ isActive }) =>
-                [
-                  'relative font-ui text-[11px] uppercase tracking-[0.22em] transition-colors duration-fast',
-                  isActive ? 'text-text-accent' : 'text-text-secondary hover:text-text-primary',
-                  // Active underline indicator
-                  isActive
-                    ? 'after:absolute after:-bottom-[18px] after:left-1/2 after:h-px after:w-6 after:-translate-x-1/2 after:bg-accent-gold'
-                    : '',
-                ].join(' ')
-              }
-            >
-              {link.label}
-            </NavLink>
-          ))}
-        </nav>
 
         <div className="hidden items-center gap-3 md:flex">
           {isAuthenticated ? (
@@ -90,45 +68,34 @@ export function Navbar() {
       </div>
 
       {menuOpen ? (
-        <nav className="border-t border-border-primary bg-bg-secondary anim-fade-in md:hidden">
-          <ul className="flex flex-col px-4 py-3">
-            {navLinks.map((link) => (
-              <li key={link.to}>
-                <NavLink
-                  to={link.to}
-                  className={({ isActive }) =>
-                    [
-                      'block py-2 font-display text-sm uppercase tracking-[0.2em]',
-                      isActive ? 'text-text-accent' : 'text-text-secondary',
-                    ].join(' ')
-                  }
-                >
-                  {link.label}
-                </NavLink>
-              </li>
-            ))}
-            <li className="border-t border-border-primary pt-3">
-              {isAuthenticated ? (
-                <Button size="sm" variant="secondary" className="w-full" onClick={handleLogout}>
-                  Logout · {user?.displayName}
+        <div className="anim-fade-in border-t border-border-primary bg-bg-secondary md:hidden">
+          <div className="px-4 py-3">
+            {isAuthenticated ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-text-secondary">
+                  Signed in as
+                </p>
+                <p className="text-sm text-text-primary">{user?.displayName}</p>
+                <Button size="sm" variant="secondary" className="mt-2" onClick={handleLogout}>
+                  Logout
                 </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <NavLink to="/login" className="flex-1">
-                    <Button size="sm" variant="secondary" className="w-full">
-                      Login
-                    </Button>
-                  </NavLink>
-                  <NavLink to="/register" className="flex-1">
-                    <Button size="sm" className="w-full">
-                      Sign up
-                    </Button>
-                  </NavLink>
-                </div>
-              )}
-            </li>
-          </ul>
-        </nav>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <NavLink to="/login" className="flex-1">
+                  <Button size="sm" variant="secondary" className="w-full">
+                    Login
+                  </Button>
+                </NavLink>
+                <NavLink to="/register" className="flex-1">
+                  <Button size="sm" className="w-full">
+                    Sign up
+                  </Button>
+                </NavLink>
+              </div>
+            )}
+          </div>
+        </div>
       ) : null}
     </header>
   );

@@ -1,8 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { UniverseWithCounts } from '@verser/shared';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { ArrowRightIcon, TrashIcon } from '../components/ui/Icons';
 import { OrnateDivider } from '../components/ui/OrnateDivider';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { Spinner } from '../components/ui/Spinner';
@@ -59,6 +60,23 @@ export function UniverseDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const { confirm, ConfirmDialogPortal } = useConfirmDialog();
   const [activeTab, setActiveTab] = useState<TabKey>('characters');
+  // Track which tabs have ever been opened. We render visited tabs once and
+  // toggle visibility via the `hidden` attribute so revisiting a tab doesn't
+  // unmount its manager (which would refetch and flash a spinner).
+  const [visited, setVisited] = useState<Record<TabKey, boolean>>(() => ({
+    characters: true,
+    locations: false,
+    systems: false,
+    lore: false,
+    laws: false,
+    timeline: false,
+    relations: false,
+    tags: false,
+  }));
+
+  useEffect(() => {
+    setVisited((prev) => (prev[activeTab] ? prev : { ...prev, [activeTab]: true }));
+  }, [activeTab]);
 
   const fetchOne = useCallback(() => universeService.detail(id), [id]);
   const { data, status, error, run } = useAsync(fetchOne);
@@ -146,6 +164,22 @@ export function UniverseDetailPage() {
             className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/50 to-transparent"
             aria-hidden
           />
+
+          {/* Floating cover tools — top-right, glass surface, only when content needs them */}
+          <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-lg border border-white/10 bg-bg-primary/55 p-1 backdrop-blur-md">
+            <CoverImagePicker
+              variant="compact"
+              universeId={data.id}
+              currentUrl={data.coverUrl}
+              promptHint={`Book cover for "${data.name}"${data.genre ? `, ${data.genre} genre` : ''}${
+                data.description ? `. ${data.description.slice(0, 200)}` : ''
+              }`}
+              onUpload={handleUploadCover}
+              onSetUrl={handleSetCoverUrl}
+              onRemove={handleRemoveCover}
+            />
+          </div>
+
           <div className="relative flex h-full flex-col justify-end p-6 sm:p-8">
             <Link
               to="/dashboard"
@@ -166,29 +200,31 @@ export function UniverseDetailPage() {
           </div>
         </div>
 
+        {/* Compact footer: description on the left, single primary CTA on the right,
+            destructive action discreetly tucked at the far end. */}
         <div className="flex flex-col gap-4 border-t border-border-primary p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div className="max-w-3xl text-sm leading-relaxed text-text-secondary">
-            {data.description ?? <span className="text-text-muted italic">No description yet.</span>}
+            {data.description ?? (
+              <span className="text-text-muted italic">No description yet.</span>
+            )}
           </div>
-          <div className="flex flex-col gap-3 sm:items-end">
-            <CoverImagePicker
-              universeId={data.id}
-              currentUrl={data.coverUrl}
-              promptHint={`Book cover for "${data.name}"${data.genre ? `, ${data.genre} genre` : ''}${
-                data.description ? `. ${data.description.slice(0, 200)}` : ''
-              }`}
-              onUpload={handleUploadCover}
-              onSetUrl={handleSetCoverUrl}
-              onRemove={handleRemoveCover}
-            />
-            <div className="flex flex-wrap gap-2">
-              <Link to={`/universes/${data.id}/write`}>
-                <Button>Open writing studio →</Button>
-              </Link>
-              <Button variant="ghost" onClick={() => void handleDelete()} loading={deleting}>
-                Delete
+          <div className="flex items-center gap-2 sm:flex-shrink-0">
+            <Link to={`/universes/${data.id}/write`}>
+              <Button>
+                Writing studio
+                <ArrowRightIcon />
               </Button>
-            </div>
+            </Link>
+            <Button
+              size="icon"
+              variant="ghost"
+              title="Delete universe"
+              aria-label="Delete universe"
+              onClick={() => void handleDelete()}
+              loading={deleting}
+            >
+              <TrashIcon />
+            </Button>
           </div>
         </div>
       </section>
@@ -214,35 +250,62 @@ export function UniverseDetailPage() {
 
       <section aria-label="Worldbuilding workspace" className="space-y-6">
         <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
-        <div key={activeTab} className="anim-fade-up">
-          {activeTab === 'characters' && (
-            <CharactersManager universeId={data.id} onChange={() => void run()} />
+        {/* Keep-alive: render each tab once visited and toggle visibility.
+            Avoids the flash-of-spinner that comes from remounting on every
+            tab switch. */}
+        <div className="relative">
+          {visited.characters && (
+            <TabPanel active={activeTab === 'characters'}>
+              <CharactersManager universeId={data.id} onChange={() => void run()} />
+            </TabPanel>
           )}
-          {activeTab === 'locations' && (
-            <LocationsManager universeId={data.id} onChange={() => void run()} />
+          {visited.locations && (
+            <TabPanel active={activeTab === 'locations'}>
+              <LocationsManager universeId={data.id} onChange={() => void run()} />
+            </TabPanel>
           )}
-          {activeTab === 'systems' && (
-            <SystemsManager universeId={data.id} onChange={() => void run()} />
+          {visited.systems && (
+            <TabPanel active={activeTab === 'systems'}>
+              <SystemsManager universeId={data.id} onChange={() => void run()} />
+            </TabPanel>
           )}
-          {activeTab === 'lore' && (
-            <LoreManager universeId={data.id} onChange={() => void run()} />
+          {visited.lore && (
+            <TabPanel active={activeTab === 'lore'}>
+              <LoreManager universeId={data.id} onChange={() => void run()} />
+            </TabPanel>
           )}
-          {activeTab === 'laws' && (
-            <LawsManager universeId={data.id} onChange={() => void run()} />
+          {visited.laws && (
+            <TabPanel active={activeTab === 'laws'}>
+              <LawsManager universeId={data.id} onChange={() => void run()} />
+            </TabPanel>
           )}
-          {activeTab === 'timeline' && (
-            <TimelineManager universeId={data.id} onChange={() => void run()} />
+          {visited.timeline && (
+            <TabPanel active={activeTab === 'timeline'}>
+              <TimelineManager universeId={data.id} onChange={() => void run()} />
+            </TabPanel>
           )}
-          {activeTab === 'relations' && (
-            <RelationsManager universeId={data.id} onChange={() => void run()} />
+          {visited.relations && (
+            <TabPanel active={activeTab === 'relations'}>
+              <RelationsManager universeId={data.id} onChange={() => void run()} />
+            </TabPanel>
           )}
-          {activeTab === 'tags' && (
-            <TagsManager universeId={data.id} onChange={() => void run()} />
+          {visited.tags && (
+            <TabPanel active={activeTab === 'tags'}>
+              <TagsManager universeId={data.id} onChange={() => void run()} />
+            </TabPanel>
           )}
         </div>
       </section>
 
       <ConfirmDialogPortal />
+    </div>
+  );
+}
+
+function TabPanel({ active, children }: { active: boolean; children: React.ReactNode }) {
+  return (
+    <div hidden={!active} className={active ? 'anim-fade-up' : ''}>
+      {children}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
-type Size = 'sm' | 'md' | 'lg';
+type Size = 'sm' | 'md' | 'lg' | 'icon';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -17,13 +17,15 @@ const VARIANTS: Record<Variant, string> = {
   ghost:
     'bg-transparent text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-elevated',
   danger:
-    'bg-accent-red-soft text-text-primary border-accent-red/40 hover:border-accent-red hover:bg-accent-red/30',
+    'bg-transparent text-accent-red border-transparent hover:bg-accent-red-soft hover:border-accent-red/40',
 };
 
 const SIZES: Record<Size, string> = {
   sm: 'px-3 py-1.5 text-xs',
   md: 'px-4 py-2 text-sm',
   lg: 'px-6 py-3 text-base',
+  // Square icon-only button. Caller renders an Icon as the only child.
+  icon: 'h-8 w-8 p-0 text-sm',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -32,7 +34,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 ) {
   const classes = [
     'inline-flex items-center justify-center gap-2 rounded-md border font-ui font-medium',
-    'uppercase tracking-[0.15em] transition-all duration-fast ease-out',
+    size === 'icon' ? 'tracking-normal' : 'uppercase tracking-[0.15em]',
+    'transition-all duration-fast ease-out',
     'active:scale-[0.98]',
     'disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100',
     VARIANTS[variant],

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Button } from '../ui/Button';
+import { SparkleIcon, TrashIcon, UploadIcon } from '../ui/Icons';
 import { Spinner } from '../ui/Spinner';
 import { AIImageGeneratorModal } from '../ai/AIImageGeneratorModal';
 
@@ -12,6 +13,12 @@ export interface CoverImagePickerProps {
   /** Persists a remote URL (e.g. AI-generated). */
   onSetUrl: (url: string) => Promise<void>;
   onRemove?: () => Promise<void>;
+  /**
+   * Layout style. `toolbar` (default) renders labelled buttons.
+   * `compact` collapses everything to icon-only buttons, suitable for
+   * overlays on top of the cover image itself.
+   */
+  variant?: 'toolbar' | 'compact';
 }
 
 export function CoverImagePicker({
@@ -21,6 +28,7 @@ export function CoverImagePicker({
   onUpload,
   onSetUrl,
   onRemove,
+  variant = 'toolbar',
 }: CoverImagePickerProps) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
@@ -67,25 +75,74 @@ export function CoverImagePicker({
     }
   }
 
+  const isCompact = variant === 'compact';
+
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => fileRef.current?.click()}
-          disabled={busy}
-        >
-          {currentUrl ? 'Replace image' : 'Upload image'}
-        </Button>
-        <Button size="sm" onClick={() => setAiOpen(true)} disabled={busy}>
-          ✦ Generate with AI
-        </Button>
-        {onRemove && currentUrl ? (
-          <Button size="sm" variant="ghost" onClick={() => void handleRemove()} disabled={busy}>
-            Remove
-          </Button>
-        ) : null}
+    <div className={isCompact ? '' : 'space-y-2'}>
+      <div className={`flex flex-wrap items-center gap-2 ${isCompact ? 'gap-1' : ''}`}>
+        {isCompact ? (
+          <>
+            <Button
+              size="icon"
+              variant="secondary"
+              title={currentUrl ? 'Replace image' : 'Upload image'}
+              onClick={() => fileRef.current?.click()}
+              disabled={busy}
+              aria-label={currentUrl ? 'Replace image' : 'Upload image'}
+            >
+              <UploadIcon />
+            </Button>
+            <Button
+              size="icon"
+              variant="primary"
+              title="Generate with AI"
+              onClick={() => setAiOpen(true)}
+              disabled={busy}
+              aria-label="Generate with AI"
+            >
+              <SparkleIcon />
+            </Button>
+            {onRemove && currentUrl ? (
+              <Button
+                size="icon"
+                variant="ghost"
+                title="Remove cover"
+                onClick={() => void handleRemove()}
+                disabled={busy}
+                aria-label="Remove cover"
+              >
+                <TrashIcon />
+              </Button>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => fileRef.current?.click()}
+              disabled={busy}
+            >
+              <UploadIcon />
+              {currentUrl ? 'Replace' : 'Upload'}
+            </Button>
+            <Button size="sm" onClick={() => setAiOpen(true)} disabled={busy}>
+              <SparkleIcon />
+              Generate
+            </Button>
+            {onRemove && currentUrl ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => void handleRemove()}
+                disabled={busy}
+              >
+                <TrashIcon />
+                Remove
+              </Button>
+            ) : null}
+          </>
+        )}
         <input
           ref={fileRef}
           type="file"
@@ -93,9 +150,9 @@ export function CoverImagePicker({
           className="hidden"
           onChange={(e) => void handleFileChange(e)}
         />
-        {busy ? <Spinner label="Saving…" /> : null}
+        {busy ? <Spinner label="Saving" /> : null}
       </div>
-      {error ? <p className="text-sm text-accent-red">{error}</p> : null}
+      {error ? <p className="mt-1 text-xs text-accent-red">{error}</p> : null}
       <AIImageGeneratorModal
         open={aiOpen}
         onClose={() => setAiOpen(false)}
