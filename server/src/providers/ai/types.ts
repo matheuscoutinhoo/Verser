@@ -1,17 +1,14 @@
-import type { ImageStyle, AIMode } from '@verser/shared';
-
-export interface UniverseContext {
-  laws: Array<{ title: string; description: string; category: string }>;
-  characters: Array<{ name: string; physicalDesc?: string; personality?: string }>;
-  locations: Array<{ name: string; description?: string }>;
-  systems: Array<{ name: string; type: string; rules?: string }>;
-  lore: Array<{ title: string; category: string; content: string; importance: string }>;
-}
+import type {
+  AIMode,
+  ConsistencyIssue,
+  ImageStyle,
+  UniverseContextBundle,
+} from '@verser/shared';
 
 export interface AITextRequest {
   systemPrompt: string;
   userPrompt: string;
-  context: UniverseContext;
+  context: UniverseContextBundle;
   mode?: AIMode;
   maxTokens?: number;
   temperature?: number;
@@ -35,14 +32,6 @@ export interface AIImageResponse {
   model: string;
 }
 
-export interface ConsistencyIssue {
-  type: 'inconsistency' | 'plot_hole' | 'law_violation';
-  severity: 'critical' | 'warning' | 'info';
-  excerpt: string;
-  description: string;
-  suggestion?: string;
-}
-
 export interface ConsistencyReport {
   issues: ConsistencyIssue[];
   model: string;
@@ -50,7 +39,8 @@ export interface ConsistencyReport {
 }
 
 export interface IAIProvider {
+  readonly id: 'mock' | 'abacus';
   generateText(request: AITextRequest): Promise<AITextResponse>;
   generateImage(request: AIImageRequest): Promise<AIImageResponse>;
-  analyzeConsistency(text: string, context: UniverseContext): Promise<ConsistencyReport>;
+  analyzeConsistency(text: string, context: UniverseContextBundle): Promise<ConsistencyReport>;
 }

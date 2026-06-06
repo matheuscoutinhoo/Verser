@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { WRITING, type Writing, type WritingTreeNode } from '@verser/shared';
+import { AIAssistantPanel } from '../components/ai/AIAssistantPanel';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
-import { RichEditor, type RichEditorChange } from '../components/editor/RichEditor';
+import {
+  RichEditor,
+  type RichEditorChange,
+  type RichEditorHandle,
+} from '../components/editor/RichEditor';
 import { WritingTree } from '../components/editor/WritingTree';
 import { useDebouncedEffect } from '../hooks/useDebouncedEffect';
 import { writingService, type UpdateWritingResult } from '../services/writing.service';
@@ -38,6 +43,10 @@ export function WritingsPage() {
   const [createTitle, setCreateTitle] = useState('');
 
   const [versionsOpen, setVersionsOpen] = useState(false);
+  const [aiPanelOpen, setAiPanelOpen] = useState(true);
+  const [selectionText, setSelectionText] = useState('');
+  const [surroundingText, setSurroundingText] = useState('');
+  const editorRef = useRef<RichEditorHandle | null>(null);
 
   // Keep the latest persisted snapshot so we can compute "dirty".
   const persistedContent = useRef<string>('');
@@ -201,7 +210,14 @@ export function WritingsPage() {
   }, [saveStatus, saveError]);
 
   return (
-    <div className="grid h-[calc(100vh-9rem)] grid-cols-1 gap-6 lg:grid-cols-[280px,1fr]">
+    <div
+      className={[
+        'grid h-[calc(100vh-9rem)] grid-cols-1 gap-6',
+        aiPanelOpen
+          ? 'lg:grid-cols-[260px,1fr,320px]'
+          : 'lg:grid-cols-[280px,1fr]',
+      ].join(' ')}
+    >
       <div className="min-h-0">
         {treeLoading ? (
           <p className="text-text-secondary">Loading…</p>
@@ -248,6 +264,13 @@ export function WritingsPage() {
                 >
                   {saveLabel}
                 </span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setAiPanelOpen((o) => !o)}
+                >
+                  {aiPanelOpen ? 'Hide AI' : 'Show AI'}
+                </Button>
                 <Button size="sm" variant="secondary" onClick={() => setVersionsOpen(true)}>
                   Versions
                 </Button>
@@ -261,8 +284,13 @@ export function WritingsPage() {
             </header>
             <div className="flex-1 min-h-0">
               <RichEditor
+                ref={editorRef}
                 content={content}
                 onChange={handleEditorChange}
+                onSelectionChange={(s) => {
+                  setSelectionText(s.text);
+                  setSurroundingText(s.fullText);
+                }}
                 fullscreen={fullscreen}
                 onFullscreenToggle={() => setFullscreen((f) => !f)}
                 placeholder="Write the next scene…"
@@ -275,6 +303,21 @@ export function WritingsPage() {
           </Card>
         )}
       </div>
+
+      {aiPanelOpen ? (
+        <div className="min-h-0">
+          <AIAssistantPanel
+            universeId={universeId}
+            selection={selectionText}
+            surrounding={surroundingText}
+            writingId={writing?.id}
+            onAccept={(text) => {
+              editorRef.current?.insertAtCursor(text);
+              setSaveStatus('dirty');
+            }}
+          />
+        </div>
+      ) : null}
 
       <Modal
         open={createTarget !== null}

@@ -19,7 +19,10 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRATION: z.string().default('15m'),
   JWT_REFRESH_EXPIRATION: z.string().default('7d'),
 
-  ABACUS_AI_API_KEY: z.string().optional(),
+  ABACUS_AI_API_KEY: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : undefined)),
   ABACUS_AI_TEXT_MODEL: z.string().default('abacus-default-text'),
   ABACUS_AI_IMAGE_MODEL: z.string().default('abacus-default-image'),
   ABACUS_AI_BASE_URL: z.string().url().default('https://api.abacus.ai'),

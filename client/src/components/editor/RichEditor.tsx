@@ -15,9 +15,16 @@ export interface RichEditorChange {
   chars: number;
 }
 
+export interface RichEditorSelection {
+  text: string;
+  /** Plain text of the entire document — useful as "surrounding" context. */
+  fullText: string;
+}
+
 export interface RichEditorProps {
   content: string;
   onChange?: (change: RichEditorChange) => void;
+  onSelectionChange?: (selection: RichEditorSelection) => void;
   placeholder?: string;
   /** When true, swaps the surface into a full-viewport overlay (RN014). */
   fullscreen?: boolean;
@@ -26,10 +33,11 @@ export interface RichEditorProps {
 
 export interface RichEditorHandle {
   editor: Editor | null;
+  insertAtCursor: (text: string) => void;
 }
 
 export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(function RichEditor(
-  { content, onChange, placeholder, fullscreen, onFullscreenToggle },
+  { content, onChange, onSelectionChange, placeholder, fullscreen, onFullscreenToggle },
   ref,
 ) {
   const extensions = useMemo(
@@ -70,9 +78,24 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(function
         chars: e.storage.characterCount.characters() as number,
       });
     },
+    onSelectionUpdate({ editor: e }) {
+      if (!onSelectionChange) return;
+      const { from, to } = e.state.selection;
+      const selectedText = from === to ? '' : e.state.doc.textBetween(from, to, ' ');
+      onSelectionChange({ text: selectedText, fullText: e.getText() });
+    },
   });
 
-  useImperativeHandle(ref, () => ({ editor }), [editor]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      editor,
+      insertAtCursor: (text: string) => {
+        editor?.chain().focus().insertContent(text).run();
+      },
+    }),
+    [editor],
+  );
 
   // Sync external content updates (when user switches documents).
   useEffect(() => {

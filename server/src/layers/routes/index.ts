@@ -1,6 +1,7 @@
 import { Router, type RequestHandler } from 'express';
 import type { Container } from '../../container';
 import { createUniverseAccessMiddleware } from '../middlewares/universe-access.middleware';
+import { createAIRouter } from './ai.routes';
 import { createAuthRouter } from './auth.routes';
 import { createHealthRouter } from './health.routes';
 import { createUniverseRouter } from './universe.routes';
@@ -19,6 +20,7 @@ export function createApiRouter(container: Container, authenticate: RequestHandl
     '/universes/:universeId',
     createUniverseChildrenRouter(container, authenticate, universeAccess),
   );
+  api.use('/ai', createAIRouter(container.aiController, authenticate));
 
   return api;
 }

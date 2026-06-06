@@ -1,6 +1,8 @@
 import type { PrismaClient } from '@prisma/client';
+import { env, isTest } from './config/env';
 import { prisma as defaultPrisma } from './config/database';
-import { isTest } from './config/env';
+import { logger } from './config/logger';
+import { AIController } from './layers/controllers/ai.controller';
 import { AuthController } from './layers/controllers/auth.controller';
 import { CharacterController } from './layers/controllers/character.controller';
 import { CharacterRelationController } from './layers/controllers/character-relation.controller';
@@ -14,6 +16,7 @@ import { UploadController } from './layers/controllers/upload.controller';
 import { UserController } from './layers/controllers/user.controller';
 import { WorldSystemController } from './layers/controllers/world-system.controller';
 import { WritingController } from './layers/controllers/writing.controller';
+import { AIUsageLogRepository } from './layers/repositories/ai-usage-log.repository';
 import { CharacterRepository } from './layers/repositories/character.repository';
 import { CharacterRelationRepository } from './layers/repositories/character-relation.repository';
 import { ImmutableLawRepository } from './layers/repositories/immutable-law.repository';
@@ -27,6 +30,9 @@ import { UserRepository } from './layers/repositories/user.repository';
 import { WorldSystemRepository } from './layers/repositories/world-system.repository';
 import { WritingRepository } from './layers/repositories/writing.repository';
 import { WritingVersionRepository } from './layers/repositories/writing-version.repository';
+import { AIService } from './layers/services/ai.service';
+import { ContextBuilderService } from './layers/services/context-builder.service';
+import { PromptBuilderService } from './layers/services/prompt-builder.service';
 import { AuthService } from './layers/services/auth.service';
 import { CharacterService } from './layers/services/character.service';
 import { CharacterRelationService } from './layers/services/character-relation.service';
@@ -63,6 +69,7 @@ export interface Container {
   universeTagRepo: UniverseTagRepository;
   writingRepo: WritingRepository;
   writingVersionRepo: WritingVersionRepository;
+  aiUsageLogRepo: AIUsageLogRepository;
 
   // Services
   tokenService: TokenService;
@@ -78,6 +85,9 @@ export interface Container {
   timelineEventService: TimelineEventService;
   universeTagService: UniverseTagService;
   writingService: WritingService;
+  contextBuilder: ContextBuilderService;
+  promptBuilder: PromptBuilderService;
+  aiService: AIService;
 
   // Controllers
   authController: AuthController;
@@ -93,6 +103,7 @@ export interface Container {
   universeTagController: UniverseTagController;
   uploadController: UploadController;
   writingController: WritingController;
+  aiController: AIController;
 
   // Providers
   aiProvider: IAIProvider;
@@ -122,6 +133,7 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
   const universeTagRepo = new UniverseTagRepository(prisma);
   const writingRepo = new WritingRepository(prisma);
   const writingVersionRepo = new WritingVersionRepository(prisma);
+  const aiUsageLogRepo = new AIUsageLogRepository(prisma);
 
   // Services
   const tokenService = new TokenService();
@@ -140,12 +152,35 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
   const timelineEventService = new TimelineEventService(timelineEventRepo);
   const universeTagService = new UniverseTagService(universeTagRepo);
   const writingService = new WritingService({ writingRepo, versionRepo: writingVersionRepo });
+  const contextBuilder = new ContextBuilderService({
+    universeRepo,
+    characterRepo,
+    locationRepo,
+    systemRepo: worldSystemRepo,
+    loreRepo: loreEntryRepo,
+    lawRepo: immutableLawRepo,
+  });
+  const promptBuilder = new PromptBuilderService();
 
   // Providers
+  // Auto-fall back to MockAIProvider whenever ABACUS_AI_API_KEY is missing so the
+  // app stays runnable in dev/CI without credentials.
   const aiProvider: IAIProvider =
-    overrides.aiProvider ?? (isTest ? new MockAIProvider() : new AbacusAIProvider());
+    overrides.aiProvider ??
+    (isTest || !env.ABACUS_AI_API_KEY ? new MockAIProvider() : new AbacusAIProvider());
+  if (!isTest && !env.ABACUS_AI_API_KEY) {
+    logger.warn('ABACUS_AI_API_KEY not set — falling back to MockAIProvider for AI calls');
+  }
   const storageProvider: IStorageProvider =
     overrides.storageProvider ?? new LocalStorageProvider();
+
+  const aiService = new AIService({
+    provider: aiProvider,
+    usageLogRepo: aiUsageLogRepo,
+    universeRepo,
+    contextBuilder,
+    promptBuilder,
+  });
 
   // Controllers
   const authController = new AuthController(authService);
@@ -166,6 +201,7 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
     locationService,
   );
   const writingController = new WritingController(writingService);
+  const aiController = new AIController(aiService);
 
   return {
     prisma,
@@ -182,6 +218,7 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
     universeTagRepo,
     writingRepo,
     writingVersionRepo,
+    aiUsageLogRepo,
     tokenService,
     authService,
     userService,
@@ -195,6 +232,9 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
     timelineEventService,
     universeTagService,
     writingService,
+    contextBuilder,
+    promptBuilder,
+    aiService,
     authController,
     userController,
     universeController,
@@ -208,6 +248,7 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
     universeTagController,
     uploadController,
     writingController,
+    aiController,
     aiProvider,
     storageProvider,
   };

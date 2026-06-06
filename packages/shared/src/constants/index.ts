@@ -47,6 +47,17 @@ export type ImageStyle = (typeof IMAGE_STYLE)[number];
 export const AI_MODE = ['rewrite', 'expand', 'brainstorm', 'critique'] as const;
 export type AIMode = (typeof AI_MODE)[number];
 
+export const AI = {
+  /** Max tokens reserved for universe-context injection (laws + characters + lore). */
+  MAX_CONTEXT_TOKENS: 4_000,
+  /** Max tokens the model may produce per call. */
+  MAX_OUTPUT_TOKENS: 1_500,
+  /** Per-user hourly rate limit on /api/ai/* endpoints. */
+  PER_USER_HOURLY_LIMIT: 60,
+  /** Importance levels included by default in context injection (RN006). */
+  DEFAULT_LORE_IMPORTANCE_LEVELS: ['critical', 'high'] as const,
+} as const;
+
 export const ERROR_CODES = {
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   UNAUTHORIZED: 'UNAUTHORIZED',
