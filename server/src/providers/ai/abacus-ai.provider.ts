@@ -78,20 +78,14 @@ export class AbacusAIProvider implements IAIProvider {
 
     let body: unknown;
     if (isChatCompletions) {
-      // Multimodal-aware models (Gemini Flash Image, GPT-Image, …) accept a
-      // plain user message describing the image. We add a light system
-      // hint so the assistant returns a usable URL (or markdown image)
-      // rather than prose around it.
+      // RouteLLM-style image generation via chat completions: send a single
+      // user message and opt in to the image modality. The assistant
+      // replies with `choices[i].message.content` as an array of parts
+      // where one part is `{ type: 'image_url', image_url: { url } }`.
+      // (See Abacus docs for nano_banana_pro / gemini-flash-image.)
       body = {
         model: this.imageModel,
         messages: [
-          {
-            role: 'system',
-            content:
-              'You are an image generator. Generate the requested image and return ONLY the result. ' +
-              'If your platform returns inline image bytes, return them as such. ' +
-              'Otherwise return a single direct image URL or markdown image link with no surrounding prose.',
-          },
           {
             role: 'user',
             content: request.style
@@ -99,6 +93,7 @@ export class AbacusAIProvider implements IAIProvider {
               : request.prompt,
           },
         ],
+        modalities: ['image'],
       };
     } else if (isImagesGenerations) {
       body = {
