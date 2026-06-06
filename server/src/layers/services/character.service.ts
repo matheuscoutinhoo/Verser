@@ -20,7 +20,7 @@ function toDTO(row: Character): CharacterDTO {
     personality: row.personality,
     backstory: row.backstory,
     motivations: row.motivations,
-    skills: parseJsonField<string[]>(row.skills, []),
+    skills: row.skills,
     notes: row.notes,
     imageUrl: row.imageUrl,
     imageStyle: row.imageStyle,
@@ -60,7 +60,7 @@ export class CharacterService {
       personality: input.personality ?? null,
       backstory: input.backstory ?? null,
       motivations: input.motivations ?? null,
-      skills: input.skills ? stringifyJsonField(input.skills) : null,
+      skills: input.skills ?? null,
       notes: input.notes ?? null,
       imageStyle: input.imageStyle ?? null,
       customFields: input.customFields ? stringifyJsonField(input.customFields) : null,
@@ -85,9 +85,7 @@ export class CharacterService {
       ...(input.personality !== undefined ? { personality: input.personality } : {}),
       ...(input.backstory !== undefined ? { backstory: input.backstory } : {}),
       ...(input.motivations !== undefined ? { motivations: input.motivations } : {}),
-      ...(input.skills !== undefined
-        ? { skills: input.skills ? stringifyJsonField(input.skills) : null }
-        : {}),
+      ...(input.skills !== undefined ? { skills: input.skills } : {}),
       ...(input.notes !== undefined ? { notes: input.notes } : {}),
       ...(input.imageStyle !== undefined ? { imageStyle: input.imageStyle } : {}),
       ...(((input as { imageUrl?: string | null }).imageUrl !== undefined)

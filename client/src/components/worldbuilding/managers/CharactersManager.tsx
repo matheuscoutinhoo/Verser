@@ -1,14 +1,12 @@
 import { useMemo, useState } from 'react';
 import type { Character, UpsertCharacterInput } from '@verser/shared';
 import { Button } from '../../ui/Button';
-import { CategoryChipInput } from '../../ui/CategoryChipInput';
 import { Input } from '../../ui/Input';
 import { Modal } from '../../ui/Modal';
 import { Textarea } from '../../ui/Textarea';
 import { useConfirmDialog } from '../../ui/useConfirmDialog';
 import { useEntityCrud } from '../../../hooks/useEntityCrud';
 import { charactersService } from '../../../services/worldbuilding.service';
-import { CHARACTER_SKILL_PRESETS } from '../../../constants/character-skills';
 import { EntityListItem } from '../EntityListItem';
 import { InlineImagePicker } from '../InlineImagePicker';
 import { ManagerShell } from '../ManagerShell';
@@ -31,7 +29,7 @@ interface FormState {
   personality: string;
   backstory: string;
   motivations: string;
-  skills: string[];
+  skills: string;
   notes: string;
 }
 
@@ -42,7 +40,7 @@ const EMPTY_FORM: FormState = {
   personality: '',
   backstory: '',
   motivations: '',
-  skills: [],
+  skills: '',
   notes: '',
 };
 
@@ -54,7 +52,7 @@ function characterToForm(c: Character): FormState {
     personality: c.personality ?? '',
     backstory: c.backstory ?? '',
     motivations: c.motivations ?? '',
-    skills: c.skills ?? [],
+    skills: c.skills ?? '',
     notes: c.notes ?? '',
   };
 }
@@ -69,7 +67,7 @@ function formToInput(form: FormState): UpsertCharacterInput {
     personality: form.personality.trim() || null,
     backstory: form.backstory.trim() || null,
     motivations: form.motivations.trim() || null,
-    skills: form.skills.length > 0 ? form.skills : undefined,
+    skills: form.skills.trim() || null,
     notes: form.notes.trim() || null,
   };
 }
@@ -258,20 +256,11 @@ export function CharactersManager({ universeId, onChange }: CharactersManagerPro
             value={form.motivations}
             onChange={(e) => setForm({ ...form, motivations: e.target.value })}
           />
-          <CategoryChipInput
+          <Textarea
             label="Skills"
-            suggestions={CHARACTER_SKILL_PRESETS}
-            selected={form.skills}
-            onAdd={(value) =>
-              setForm((prev) =>
-                prev.skills.includes(value) ? prev : { ...prev, skills: [...prev.skills, value] },
-              )
-            }
-            onRemove={(value) =>
-              setForm((prev) => ({ ...prev, skills: prev.skills.filter((s) => s !== value) }))
-            }
-            placeholder="Swordsmanship, Persuasion, Hacking…"
-            helperText="Pick from common skills or type a custom one. Press Enter to add."
+            value={form.skills}
+            onChange={(e) => setForm({ ...form, skills: e.target.value })}
+            placeholder="Swordsmanship, persuasion, hacking… describe freely."
           />
           <Textarea
             label="Notes"

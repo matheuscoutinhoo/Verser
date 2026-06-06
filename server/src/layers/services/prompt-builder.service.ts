@@ -149,7 +149,7 @@ export class PromptBuilderService {
   private schemaForEntity(entityType: BuildAssistCreationInput['entityType']): string {
     switch (entityType) {
       case 'character':
-        return '{ "name": string, "aliases": string[], "physicalDesc": string, "personality": string, "backstory": string, "motivations": string, "skills": string[], "notes": string }';
+        return '{ "name": string, "aliases": string[], "physicalDesc": string, "personality": string, "backstory": string, "motivations": string, "skills": string, "notes": string }';
       case 'location':
         return '{ "name": string, "description": string, "geography": string, "culture": string, "history": string, "climate": string, "population": string }';
       case 'system':
