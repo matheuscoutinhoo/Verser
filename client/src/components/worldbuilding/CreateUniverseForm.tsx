@@ -3,7 +3,9 @@ import { useForm } from 'react-hook-form';
 import type { CreateUniverseInput } from '@verser/shared';
 import { createUniverseSchema } from '@verser/shared';
 import { Button } from '../ui/Button';
+import { CategoryChipInput } from '../ui/CategoryChipInput';
 import { Input } from '../ui/Input';
+import { UNIVERSE_CATEGORY_PRESETS } from '../../constants/universe-categories';
 
 export interface CreateUniverseFormProps {
   onSubmit: (values: CreateUniverseInput) => Promise<void>;
@@ -12,6 +14,9 @@ export interface CreateUniverseFormProps {
 
 export function CreateUniverseForm({ onSubmit, onCancel }: CreateUniverseFormProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Genre is collected as a list locally and serialised to a comma-separated
+  // string at submit time, matching the existing `genre: string | null` schema.
+  const [genres, setGenres] = useState<string[]>([]);
   const {
     register,
     handleSubmit,
@@ -20,7 +25,11 @@ export function CreateUniverseForm({ onSubmit, onCancel }: CreateUniverseFormPro
 
   async function handle(values: CreateUniverseInput): Promise<void> {
     setSubmitError(null);
-    const parsed = createUniverseSchema.safeParse(values);
+    const merged: CreateUniverseInput = {
+      ...values,
+      genre: genres.length > 0 ? genres.join(', ') : null,
+    };
+    const parsed = createUniverseSchema.safeParse(merged);
     if (!parsed.success) {
       const first = parsed.error.issues[0];
       setSubmitError(first?.message ?? 'Invalid input');
@@ -43,12 +52,16 @@ export function CreateUniverseForm({ onSubmit, onCancel }: CreateUniverseFormPro
         {...register('name', { required: 'Name is required' })}
         error={errors.name?.message}
       />
-      <Input
+      <CategoryChipInput
         label="Genre"
-        type="text"
-        placeholder="fantasy, sci-fi, thriller..."
-        {...register('genre')}
-        error={errors.genre?.message}
+        suggestions={UNIVERSE_CATEGORY_PRESETS}
+        selected={genres}
+        onAdd={(value) =>
+          setGenres((prev) => (prev.includes(value) ? prev : [...prev, value]))
+        }
+        onRemove={(value) => setGenres((prev) => prev.filter((g) => g !== value))}
+        placeholder="Fantasy, sci-fi, thriller…"
+        helperText="Pick from the presets, type your own, or chain several."
       />
       <div>
         <label className="font-ui text-xs uppercase tracking-wider text-text-secondary">

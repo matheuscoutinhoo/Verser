@@ -16,10 +16,22 @@ export interface CategoryChipInputHandle {
 export interface CategoryChipInputProps {
   /** Pre-curated suggestions; filtered live as the user types. */
   suggestions: ReadonlyArray<string>;
-  /** Values already chosen — removed from the dropdown so they can't be added twice. */
+  /**
+   * Values already chosen — removed from the dropdown so they can't be
+   * added twice. Pass when the caller renders chips elsewhere
+   * (e.g. TagsManager renders persisted tags as a separate row).
+   */
   existing?: ReadonlyArray<string>;
+  /**
+   * Controlled list of currently selected values rendered as chips inside
+   * the input field itself. Pass alongside `onRemove` to opt into the
+   * "chip-in-field" layout used by forms that collect a list locally.
+   */
+  selected?: ReadonlyArray<string>;
   /** Called when the user picks a suggestion or presses Enter on a free-form value. */
   onAdd: (value: string) => void | Promise<void>;
+  /** Required when `selected` is provided. Called when a chip is removed. */
+  onRemove?: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
   label?: string;
@@ -50,7 +62,9 @@ export const CategoryChipInput = forwardRef<CategoryChipInputHandle, CategoryChi
     {
       suggestions,
       existing = [],
+      selected,
       onAdd,
+      onRemove,
       placeholder = 'Type to filter or add…',
       disabled,
       label,
@@ -70,10 +84,20 @@ export const CategoryChipInput = forwardRef<CategoryChipInputHandle, CategoryChi
 
     useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }), []);
 
+    // Both `selected` (chips inside the field) and `existing` (chips owned by
+    // the caller) count as "already chosen" for filter + dedupe purposes.
     const existingSet = useMemo(
-      () => new Set(existing.map((v) => normalize(v))),
-      [existing],
+      () =>
+        new Set(
+          [...existing, ...(selected ?? [])].map((v) => normalize(v)),
+        ),
+      [existing, selected],
     );
+
+    // Chip mode renders the chips inside the input shell and shows a
+    // backspace-to-remove affordance. Activated when the parent opts in by
+    // passing both `selected` and `onRemove`.
+    const chipMode = Array.isArray(selected) && typeof onRemove === 'function';
 
     const filtered = useMemo(() => {
       const q = normalize(query);
@@ -136,6 +160,11 @@ export const CategoryChipInput = forwardRef<CategoryChipInputHandle, CategoryChi
       } else if (event.key === 'Tab') {
         // Tabbing out is a soft close; let focus move naturally.
         setOpen(false);
+      } else if (event.key === 'Backspace' && chipMode && query === '' && selected && selected.length > 0) {
+        // Quick chip-removal: when the field is empty, Backspace pops the
+        // last chip. Mirrors the gesture used in Gmail/GitHub label inputs.
+        event.preventDefault();
+        onRemove?.(selected[selected.length - 1]);
       }
     }
 
@@ -155,42 +184,107 @@ export const CategoryChipInput = forwardRef<CategoryChipInputHandle, CategoryChi
           </label>
         ) : null}
         <div className="relative">
-          <input
-            ref={inputRef}
-            id={inputId}
-            type="text"
-            role="combobox"
-            aria-expanded={showDropdown}
-            aria-controls={listboxId}
-            aria-autocomplete="list"
-            aria-activedescendant={
-              showDropdown && filtered[highlight]
-                ? `${listboxId}-opt-${highlight}`
-                : undefined
-            }
-            autoComplete="off"
-            disabled={disabled || busy}
-            value={query}
-            placeholder={placeholder}
-            onFocus={() => setOpen(true)}
-            onBlur={() => {
-              // Small delay so onMouseDown on a suggestion can run first.
-              window.setTimeout(() => setOpen(false), 120);
-            }}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-              setHighlight(0);
-            }}
-            onKeyDown={handleKeyDown}
-            className="w-full rounded-md border border-border-primary bg-bg-elevated px-3 py-2 font-ui text-sm text-text-primary placeholder:text-text-muted focus:border-border-glow focus:outline-none focus:ring-1 focus:ring-accent-gold/30"
-          />
-          {busy ? (
-            <span
-              aria-hidden
-              className="absolute right-3 top-1/2 inline-block h-3 w-3 -translate-y-1/2 animate-[verser-spin_700ms_linear_infinite] rounded-full border border-text-muted border-t-accent-gold"
-            />
-          ) : null}
+          {chipMode ? (
+            <div
+              className="flex w-full flex-wrap items-center gap-1.5 rounded-md border border-border-primary bg-bg-elevated px-2 py-1.5 transition-colors duration-fast focus-within:border-border-glow focus-within:ring-1 focus-within:ring-accent-gold/30"
+              onClick={() => inputRef.current?.focus()}
+            >
+              {selected?.map((value) => (
+                <span
+                  key={value}
+                  className="inline-flex items-center gap-1.5 rounded border border-border-strong bg-bg-secondary/80 px-2 py-0.5 text-xs text-text-primary"
+                >
+                  {value}
+                  <button
+                    type="button"
+                    aria-label={`Remove ${value}`}
+                    className="text-text-muted transition-colors hover:text-accent-red"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove?.(value);
+                    }}
+                    tabIndex={-1}
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+              <input
+                ref={inputRef}
+                id={inputId}
+                type="text"
+                role="combobox"
+                aria-expanded={showDropdown}
+                aria-controls={listboxId}
+                aria-autocomplete="list"
+                aria-activedescendant={
+                  showDropdown && filtered[highlight]
+                    ? `${listboxId}-opt-${highlight}`
+                    : undefined
+                }
+                autoComplete="off"
+                disabled={disabled || busy}
+                value={query}
+                placeholder={selected && selected.length > 0 ? '' : placeholder}
+                onFocus={() => setOpen(true)}
+                onBlur={() => {
+                  window.setTimeout(() => setOpen(false), 120);
+                }}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setOpen(true);
+                  setHighlight(0);
+                }}
+                onKeyDown={handleKeyDown}
+                className="min-w-[8ch] flex-1 border-0 bg-transparent px-1 py-0.5 font-ui text-sm text-text-primary placeholder:text-text-muted focus:outline-none"
+              />
+              {busy ? (
+                <span
+                  aria-hidden
+                  className="inline-block h-3 w-3 animate-[verser-spin_700ms_linear_infinite] rounded-full border border-text-muted border-t-accent-gold"
+                />
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <input
+                ref={inputRef}
+                id={inputId}
+                type="text"
+                role="combobox"
+                aria-expanded={showDropdown}
+                aria-controls={listboxId}
+                aria-autocomplete="list"
+                aria-activedescendant={
+                  showDropdown && filtered[highlight]
+                    ? `${listboxId}-opt-${highlight}`
+                    : undefined
+                }
+                autoComplete="off"
+                disabled={disabled || busy}
+                value={query}
+                placeholder={placeholder}
+                onFocus={() => setOpen(true)}
+                onBlur={() => {
+                  // Small delay so onMouseDown on a suggestion can run first.
+                  window.setTimeout(() => setOpen(false), 120);
+                }}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setOpen(true);
+                  setHighlight(0);
+                }}
+                onKeyDown={handleKeyDown}
+                className="w-full rounded-md border border-border-primary bg-bg-elevated px-3 py-2 font-ui text-sm text-text-primary placeholder:text-text-muted focus:border-border-glow focus:outline-none focus:ring-1 focus:ring-accent-gold/30"
+              />
+              {busy ? (
+                <span
+                  aria-hidden
+                  className="absolute right-3 top-1/2 inline-block h-3 w-3 -translate-y-1/2 animate-[verser-spin_700ms_linear_infinite] rounded-full border border-text-muted border-t-accent-gold"
+                />
+              ) : null}
+            </>
+          )}
         </div>
 
         {showDropdown ? (

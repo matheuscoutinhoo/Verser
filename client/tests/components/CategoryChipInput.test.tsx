@@ -56,4 +56,34 @@ describe('<CategoryChipInput />', () => {
     expect(screen.queryByRole('option', { name: 'Fantasy' })).not.toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Dark Fantasy' })).toBeInTheDocument();
   });
+
+  it('renders chip-mode with selected values and pops the last one on Backspace', async () => {
+    const user = userEvent.setup();
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const onRemove = vi.fn();
+
+    render(
+      <CategoryChipInput
+        suggestions={PRESETS}
+        selected={['Fantasy', 'Mystery']}
+        onAdd={onAdd}
+        onRemove={onRemove}
+      />,
+    );
+
+    // Chips render with a remove button each.
+    expect(screen.getByRole('button', { name: /remove fantasy/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /remove mystery/i })).toBeInTheDocument();
+
+    // Clicking the chip's ✕ removes it.
+    await user.click(screen.getByRole('button', { name: /remove fantasy/i }));
+    expect(onRemove).toHaveBeenCalledWith('Fantasy');
+
+    // Backspace on empty input pops the last chip.
+    onRemove.mockClear();
+    const input = screen.getByRole('combobox');
+    await user.click(input);
+    await user.keyboard('{Backspace}');
+    expect(onRemove).toHaveBeenCalledWith('Mystery');
+  });
 });
