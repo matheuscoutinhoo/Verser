@@ -22,6 +22,11 @@ function toQuery(params: UniverseListParams): string {
   return s ? `?${s}` : '';
 }
 
+export interface CoverUploadResponse {
+  universe: Universe;
+  file: { url: string; key: string; size: number; mimeType: string };
+}
+
 export const universeService = {
   list(params: UniverseListParams = {}): Promise<PaginatedResult<Universe>> {
     return apiClient.get(`/universes${toQuery(params)}`);
@@ -37,5 +42,8 @@ export const universeService = {
   },
   delete(id: string): Promise<void> {
     return apiClient.delete(`/universes/${id}`);
+  },
+  uploadCover(id: string, file: File): Promise<CoverUploadResponse> {
+    return apiClient.uploadFile(`/universes/${id}/cover`, file);
   },
 };

@@ -103,8 +103,8 @@ npm run dev:client   # Web on http://localhost:5173
 ### Testing
 
 ```bash
-npm run test:server         # Server (Jest + Supertest, 111 tests)
-npm run test:client         # Client (Vitest + RTL, 27 tests)
+npm run test:server         # Server (Jest + Supertest, 116 tests)
+npm run test:client         # Client (Vitest + RTL, 30 tests)
 ```
 
 The AI provider is auto-mocked in tests (`MockAIProvider`), so no real API key is required to run the suite.

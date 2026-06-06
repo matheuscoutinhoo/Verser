@@ -88,6 +88,9 @@ export class CharacterService {
       ...(input.arc !== undefined ? { arc: input.arc } : {}),
       ...(input.notes !== undefined ? { notes: input.notes } : {}),
       ...(input.imageStyle !== undefined ? { imageStyle: input.imageStyle } : {}),
+      ...(((input as { imageUrl?: string | null }).imageUrl !== undefined)
+        ? { imageUrl: (input as { imageUrl?: string | null }).imageUrl }
+        : {}),
       ...(input.customFields !== undefined
         ? { customFields: input.customFields ? stringifyJsonField(input.customFields) : null }
         : {}),

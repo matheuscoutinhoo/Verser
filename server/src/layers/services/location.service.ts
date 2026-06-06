@@ -101,6 +101,9 @@ export class LocationService {
       ...(input.climate !== undefined ? { climate: input.climate } : {}),
       ...(input.population !== undefined ? { population: input.population } : {}),
       ...(input.imageStyle !== undefined ? { imageStyle: input.imageStyle } : {}),
+      ...(((input as { imageUrl?: string | null }).imageUrl !== undefined)
+        ? { imageUrl: (input as { imageUrl?: string | null }).imageUrl }
+        : {}),
       ...(input.customFields !== undefined
         ? { customFields: input.customFields ? stringifyJsonField(input.customFields) : null }
         : {}),

@@ -1,13 +1,13 @@
-import { forwardRef, useId, type InputHTMLAttributes } from 'react';
+import { forwardRef, useId, type TextareaHTMLAttributes } from 'react';
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
   hint?: string;
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { label, error, hint, id, className = '', ...rest },
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
+  { label, error, hint, id, className = '', rows = 3, ...rest },
   ref,
 ) {
   const generatedId = useId();
@@ -30,7 +30,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           {label}
         </label>
       ) : null}
-      <input ref={ref} id={inputId} className={inputClasses} {...rest} />
+      <textarea ref={ref} id={inputId} rows={rows} className={inputClasses} {...rest} />
       {hint ? <span className="text-xs text-text-muted">{hint}</span> : null}
       {error ? <span className="text-xs text-accent-red">{error}</span> : null}
     </div>

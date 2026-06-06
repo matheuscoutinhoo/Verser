@@ -102,6 +102,39 @@ export class ApiClient {
   delete<T>(path: string, body?: unknown, options: Omit<RequestOptions, 'method'> = {}): Promise<T> {
     return this.request<T>(path, { ...options, method: 'DELETE', body });
   }
+
+  /**
+   * POSTs a single file as `multipart/form-data` (field name = "file") and
+   * unwraps the standard `{ data }` envelope. Handles 401 → refresh retry.
+   */
+  async uploadFile<T>(path: string, file: File, fieldName = 'file'): Promise<T> {
+    const url = path.startsWith('http') ? path : `${config.apiBaseUrl}${path}`;
+    const form = new FormData();
+    form.append(fieldName, file);
+
+    const sendOnce = async (token: string | null): Promise<Response> =>
+      fetch(url, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        credentials: 'include',
+        body: form,
+      });
+
+    let response = await sendOnce(this.getToken());
+    if (response.status === 401) {
+      const refreshed = await this.refreshOnce();
+      if (refreshed) response = await sendOnce(refreshed);
+    }
+
+    if (response.status === 204) return undefined as T;
+    const text = await response.text();
+    const parsed = text ? (JSON.parse(text) as { data?: T; error?: ApiErrorPayload }) : {};
+    if (!response.ok) {
+      const error = parsed.error ?? { code: 'UNKNOWN', message: response.statusText };
+      throw new ApiClientError(response.status, error);
+    }
+    return parsed.data as T;
+  }
 }
 
 export const apiClient = new ApiClient();

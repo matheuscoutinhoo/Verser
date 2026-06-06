@@ -74,10 +74,14 @@ export const upsertCharacterSchema = z.object({
   customFields: customFieldsSchema,
 });
 
-export const updateCharacterSchema = upsertCharacterSchema.partial().refine(
-  (data) => Object.keys(data).length > 0,
-  { message: 'At least one field must be provided' },
-);
+export const updateCharacterSchema = upsertCharacterSchema
+  .partial()
+  .extend({
+    imageUrl: z.string().url().nullable().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided',
+  });
 
 // ─────────────────────────────────────────────
 // Character Relation
@@ -121,10 +125,14 @@ export const upsertLocationSchema = z.object({
   parentId: z.string().min(1).nullable().optional(),
 });
 
-export const updateLocationSchema = upsertLocationSchema.partial().refine(
-  (data) => Object.keys(data).length > 0,
-  { message: 'At least one field must be provided' },
-);
+export const updateLocationSchema = upsertLocationSchema
+  .partial()
+  .extend({
+    imageUrl: z.string().url().nullable().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided',
+  });
 
 // ─────────────────────────────────────────────
 // World System
