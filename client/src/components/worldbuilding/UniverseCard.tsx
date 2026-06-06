@@ -1,11 +1,23 @@
 import { Link } from 'react-router-dom';
+import type { MouseEvent } from 'react';
 import type { Universe } from '@verser/shared';
+import { TrashIcon } from '../ui/Icons';
 
 export interface UniverseCardProps {
   universe: Universe;
+  /** Optional inline delete handler. When provided, a small trash button
+   *  appears in the top-right of the card. The card itself is a link, so
+   *  the button stops propagation to avoid navigating into the universe. */
+  onDelete?: (universe: Universe) => void;
 }
 
-export function UniverseCard({ universe }: UniverseCardProps) {
+export function UniverseCard({ universe, onDelete }: UniverseCardProps) {
+  function handleDeleteClick(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    onDelete?.(universe);
+  }
+
   return (
     <Link
       to={`/universes/${universe.id}`}
@@ -26,6 +38,18 @@ export function UniverseCard({ universe }: UniverseCardProps) {
       ) : (
         <div className="absolute inset-0 bg-parchment-gradient" aria-hidden />
       )}
+
+      {onDelete ? (
+        <button
+          type="button"
+          onClick={handleDeleteClick}
+          aria-label={`Delete universe ${universe.name}`}
+          title="Delete universe"
+          className="absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-bg-primary/55 text-text-secondary opacity-0 backdrop-blur-md transition-all duration-base ease-out hover:border-accent-red/40 hover:bg-accent-red-soft hover:text-accent-red group-hover:opacity-100 focus-visible:opacity-100"
+        >
+          <TrashIcon />
+        </button>
+      ) : null}
 
       <div className="relative flex h-full flex-col justify-end gap-2 p-5">
         {universe.genre ? (

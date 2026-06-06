@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { Universe } from '@verser/shared';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -8,6 +9,7 @@ import { OrnateDivider } from '../components/ui/OrnateDivider';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { Spinner } from '../components/ui/Spinner';
 import { StatCard } from '../components/ui/StatCard';
+import { useConfirmDialog } from '../components/ui/useConfirmDialog';
 import { CreateUniverseForm } from '../components/worldbuilding/CreateUniverseForm';
 import { UniverseCard } from '../components/worldbuilding/UniverseCard';
 import { useAsync } from '../hooks/useAsync';
@@ -21,6 +23,7 @@ export function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
+  const { confirm, ConfirmDialogPortal } = useConfirmDialog();
 
   const fetchList = useCallback(() => universeService.list({ limit: 24 }), []);
   const fetchStats = useCallback(() => userStatsService.me(), []);
@@ -33,6 +36,27 @@ export function DashboardPage() {
     const created = await universeService.create(values);
     setModalOpen(false);
     navigate(`/universes/${created.id}`);
+  }
+
+  async function handleDelete(universe: Universe): Promise<void> {
+    const ok = await confirm({
+      title: 'Delete universe?',
+      description: (
+        <>
+          <p>
+            <strong className="text-text-accent">{universe.name}</strong> and all its characters,
+            locations, systems, lore, laws, timeline events, tags and writings will be permanently
+            removed.
+          </p>
+          <p className="mt-2 text-text-muted">This cannot be undone.</p>
+        </>
+      ),
+      confirmLabel: 'Delete forever',
+      destructive: true,
+    });
+    if (!ok) return;
+    await universeService.delete(universe.id);
+    await run();
   }
 
   return (
@@ -126,7 +150,7 @@ export function DashboardPage() {
           ) : data && data.items.length > 0 ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {data.items.map((u) => (
-                <UniverseCard key={u.id} universe={u} />
+                <UniverseCard key={u.id} universe={u} onDelete={(uni) => void handleDelete(uni)} />
               ))}
             </div>
           ) : (
@@ -143,6 +167,8 @@ export function DashboardPage() {
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Create a new universe">
         <CreateUniverseForm onSubmit={handleCreate} onCancel={() => setModalOpen(false)} />
       </Modal>
+
+      <ConfirmDialogPortal />
     </div>
   );
 }
