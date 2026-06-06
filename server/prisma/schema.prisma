@@ -91,7 +91,7 @@ model Character {
   personality  String?
   backstory    String?
   motivations  String?
-  arc          String?
+  skills       String?
   notes        String?
   imageUrl     String?
   imageStyle   String?

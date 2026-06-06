@@ -61,7 +61,7 @@ export interface Character extends EntityTimestamps {
   personality: string | null;
   backstory: string | null;
   motivations: string | null;
-  arc: string | null;
+  skills: string[];
   notes: string | null;
   imageUrl: string | null;
   imageStyle: string | null;
@@ -75,7 +75,7 @@ export interface UpsertCharacterRequest {
   personality?: string | null;
   backstory?: string | null;
   motivations?: string | null;
-  arc?: string | null;
+  skills?: string[];
   notes?: string | null;
   imageStyle?: string | null;
   customFields?: Record<string, unknown>;

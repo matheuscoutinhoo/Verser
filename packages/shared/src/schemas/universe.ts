@@ -60,6 +60,7 @@ export const universeIdParamSchema = z.object({
 // ─────────────────────────────────────────────
 
 const aliasesSchema = z.array(z.string().trim().min(1).max(80)).max(20).optional();
+const skillsSchema = z.array(z.string().trim().min(1).max(60)).max(40).optional();
 
 export const upsertCharacterSchema = z.object({
   name: nameSchema,
@@ -68,7 +69,7 @@ export const upsertCharacterSchema = z.object({
   personality: longTextSchema,
   backstory: longTextSchema,
   motivations: longTextSchema,
-  arc: longTextSchema,
+  skills: skillsSchema,
   notes: longTextSchema,
   imageStyle: z.string().trim().max(30).nullable().optional(),
   customFields: customFieldsSchema,
