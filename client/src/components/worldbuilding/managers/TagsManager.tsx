@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { UniverseTag, UpsertUniverseTagInput } from '@verser/shared';
-import { Button } from '../../ui/Button';
-import { Input } from '../../ui/Input';
-import { Modal } from '../../ui/Modal';
+import { CategoryChipInput } from '../../ui/CategoryChipInput';
 import { useConfirmDialog } from '../../ui/useConfirmDialog';
 import { useEntityCrud } from '../../../hooks/useEntityCrud';
 import { tagsService } from '../../../services/worldbuilding.service';
+import { UNIVERSE_CATEGORY_PRESETS } from '../../../constants/universe-categories';
 import { ManagerShell } from '../ManagerShell';
 
 export interface TagsManagerProps {
@@ -13,12 +12,23 @@ export interface TagsManagerProps {
   onChange?: () => void;
 }
 
-interface FormState {
-  name: string;
-  color: string;
-}
+// Subtle, theme-friendly palette to auto-assign new tags from. Cycled by
+// insertion order so the same word always gets the same colour, but new
+// additions visually distinguish from neighbours.
+const TAG_PALETTE = [
+  '#c4a265', // gold
+  '#8b7355', // ornate
+  '#4d6796', // muted blue
+  '#4f8a4f', // muted green
+  '#b04545', // muted red
+  '#9a6cb5', // soft violet
+  '#c47a3d', // copper
+  '#5e8a8a', // muted teal
+] as const;
 
-const EMPTY: FormState = { name: '', color: '#c4a265' };
+function pickColor(index: number): string {
+  return TAG_PALETTE[index % TAG_PALETTE.length];
+}
 
 export function TagsManager({ universeId, onChange }: TagsManagerProps) {
   const { confirm, ConfirmDialogPortal } = useConfirmDialog();
@@ -34,23 +44,18 @@ export function TagsManager({ universeId, onChange }: TagsManagerProps) {
     [universeId],
   );
 
-  const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState<FormState>(EMPTY);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  async function handleSubmit(): Promise<void> {
-    const name = form.name.trim();
-    if (!name) {
-      setSubmitError('Name is required.');
-      return;
-    }
+  const existingNames = useMemo(() => crud.items.map((t) => t.name), [crud.items]);
+
+  async function handleAdd(name: string): Promise<void> {
+    setSubmitError(null);
     try {
-      await crud.create({ name, color: form.color || null });
-      setCreating(false);
-      setForm(EMPTY);
+      await crud.create({ name, color: pickColor(crud.items.length) });
       onChange?.();
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Could not create tag.');
+      setSubmitError(err instanceof Error ? err.message : 'Could not add tag.');
+      throw err;
     }
   }
 
@@ -77,82 +82,56 @@ export function TagsManager({ universeId, onChange }: TagsManagerProps) {
   return (
     <ManagerShell
       title="Tags"
-      description="Lightweight colour-coded labels for grouping anything in your universe."
+      description="Lightweight category labels. Type to filter the presets or hit Enter to add your own."
       status={crud.status}
       error={crud.error}
-      isEmpty={crud.items.length === 0}
-      emptyGlyph="◉"
-      emptyDescription="Tags work like flexible folders — use them however helps you organise."
-      emptyAction={<Button onClick={() => setCreating(true)}>Add tag</Button>}
+      // The chip input itself acts as the empty-state CTA, so we never want
+      // ManagerShell to swap to its empty surface.
+      isEmpty={false}
       onRetry={() => void crud.refresh()}
-      primaryAction={
-        <Button onClick={() => setCreating(true)} disabled={crud.mutating}>
-          New tag
-        </Button>
-      }
     >
-      <div className="flex flex-wrap gap-2">
-        {crud.items.map((t) => (
-          <span
-            key={t.id}
-            className="surface-card group inline-flex items-center gap-2 px-3 py-1.5 text-sm"
-            style={{
-              borderColor: t.color ?? undefined,
-            }}
-          >
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: t.color ?? 'var(--text-muted)' }}
-              aria-hidden
-            />
-            <span className="text-text-primary">{t.name}</span>
-            <button
-              type="button"
-              className="text-text-muted hover:text-accent-red"
-              onClick={() => void handleDelete(t)}
-              aria-label={`Delete tag ${t.name}`}
-            >
-              ✕
-            </button>
-          </span>
-        ))}
-      </div>
+      <div className="space-y-4">
+        <CategoryChipInput
+          suggestions={UNIVERSE_CATEGORY_PRESETS}
+          existing={existingNames}
+          onAdd={handleAdd}
+          placeholder="Type a category…"
+          disabled={crud.mutating}
+          helperText="Try fantasy roots, themes, tone — or invent your own."
+        />
+        {submitError ? <p className="text-xs text-accent-red">{submitError}</p> : null}
 
-      <Modal open={creating} onClose={() => setCreating(false)} title="New tag">
-        <form
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleSubmit();
-          }}
-        >
-          <Input
-            label="Name"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            autoFocus
-          />
-          <div className="flex items-center gap-3">
-            <Input
-              label="Color"
-              type="color"
-              value={form.color}
-              onChange={(e) => setForm({ ...form, color: e.target.value })}
-              className="h-10 w-20 cursor-pointer p-1"
-            />
-            <span className="text-sm text-text-secondary">{form.color}</span>
+        {crud.items.length === 0 ? (
+          <p className="text-xs italic text-text-muted">
+            No tags yet. Pick one from the suggestions above to get started.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {crud.items.map((t) => (
+              <span
+                key={t.id}
+                className="surface-card group inline-flex items-center gap-2 px-3 py-1.5 text-sm"
+                style={{ borderColor: t.color ?? undefined }}
+              >
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: t.color ?? 'var(--text-muted)' }}
+                  aria-hidden
+                />
+                <span className="text-text-primary">{t.name}</span>
+                <button
+                  type="button"
+                  className="text-text-muted transition-colors hover:text-accent-red"
+                  onClick={() => void handleDelete(t)}
+                  aria-label={`Delete tag ${t.name}`}
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
           </div>
-          {submitError ? <p className="text-sm text-accent-red">{submitError}</p> : null}
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="secondary" onClick={() => setCreating(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={crud.mutating}>
-              Create tag
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        )}
+      </div>
 
       <ConfirmDialogPortal />
     </ManagerShell>
