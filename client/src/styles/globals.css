@@ -232,10 +232,26 @@
     animation: verser-glow-pulse 3.4s var(--ease-in-out) infinite;
   }
 
-  /* Decorative horizontal rule with a brighter gold core. */
+  /* Decorative horizontal rule with a brighter gold core and a halo that
+     follows the gradient's own opacity — so the glow is dense in the
+     middle and fades naturally toward the edges. `filter: drop-shadow`
+     respects the alpha channel of the element it's applied to. */
   .gold-line {
     height: 1px;
     background: var(--gradient-gold-line);
+    filter:
+      drop-shadow(0 0 2px rgba(196, 162, 101, 0.55))
+      drop-shadow(0 0 6px rgba(196, 162, 101, 0.28));
+  }
+
+  /* Same as gold-line but with a softer, wider halo. Use for hero dividers. */
+  .gold-line-lg {
+    height: 1px;
+    background: var(--gradient-gold-line);
+    filter:
+      drop-shadow(0 0 3px rgba(196, 162, 101, 0.6))
+      drop-shadow(0 0 10px rgba(196, 162, 101, 0.32))
+      drop-shadow(0 0 22px rgba(196, 162, 101, 0.18));
   }
 
   /* â”€â”€â”€ Animation utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -312,7 +328,10 @@
   .tiptap hr {
     border: none;
     height: 1px;
-    background: linear-gradient(to right, transparent, var(--border-ornate), transparent);
+    background: var(--gradient-gold-line);
+    filter:
+      drop-shadow(0 0 2px rgba(196, 162, 101, 0.5))
+      drop-shadow(0 0 6px rgba(196, 162, 101, 0.25));
     margin: 1.5em 0;
   }
   .tiptap a {
