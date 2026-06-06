@@ -4,7 +4,6 @@ import type { UniverseWithCounts } from '@verser/shared';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ArrowRightIcon, TrashIcon } from '../components/ui/Icons';
-import { OrnateDivider } from '../components/ui/OrnateDivider';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { Spinner } from '../components/ui/Spinner';
 import { StatCard } from '../components/ui/StatCard';
@@ -245,8 +244,6 @@ export function UniverseDetailPage() {
           ))}
         </div>
       </section>
-
-      <OrnateDivider variant="diamond" />
 
       <section aria-label="Worldbuilding workspace" className="space-y-6">
         <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />

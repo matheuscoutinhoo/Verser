@@ -23,7 +23,7 @@ export function Navbar() {
   // to /dashboard, so Home/Universes links would be redundant.
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border-primary bg-bg-primary/70 backdrop-blur-md">
+    <header className="sticky top-0 z-40 bg-bg-primary/70 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         <NavLink
           to={isAuthenticated ? '/dashboard' : '/'}
@@ -97,6 +97,10 @@ export function Navbar() {
           </div>
         </div>
       ) : null}
+
+      {/* Glowing gold divider that tapers at the edges — replaces the flat
+          border-bottom so the header reads as part of the ornament. */}
+      <span aria-hidden className="gold-line block" />
     </header>
   );
 }
