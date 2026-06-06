@@ -279,6 +279,15 @@
   }
 
   /* TipTap content styling. */
+  .tiptap {
+    /* Break long unbroken strings (URLs, mashed-keys input) so they wrap
+       inside the manuscript column instead of pushing lines off-screen.
+       `overflow-wrap: anywhere` allows breaking at any character when no
+       acceptable break point exists, while regular word wrapping keeps
+       normal prose flowing word-by-word. */
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
   .tiptap p {
     margin: 0 0 1em 0;
   }

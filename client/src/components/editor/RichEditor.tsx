@@ -63,11 +63,12 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(function
     content: content || '',
     editorProps: {
       attributes: {
-        // Center the text in a comfortable reading column (~72ch). Generous
-        // padding so the page itself feels like a manuscript surface and
-        // the writer can focus on the words.
+        // Centered manuscript-width column (~80ch ≈ ~6.5 inches at 12pt,
+        // close to a Word/Google Docs page width). `break-words` makes
+        // long unbroken strings wrap inside the column instead of pushing
+        // the line off-screen.
         class:
-          'editor-surface tiptap prose prose-invert max-w-[72ch] mx-auto min-h-full focus:outline-none px-6 py-10 sm:px-10 sm:py-14',
+          'editor-surface tiptap prose prose-invert mx-auto w-full max-w-[80ch] min-h-full break-words focus:outline-none px-6 py-10 sm:px-12 sm:py-14',
       },
     },
     onUpdate({ editor: e }) {
