@@ -109,12 +109,15 @@ export function AIAssistantPanel({
   }, [universeId, selection, surrounding, writingId]);
 
   return (
-    <aside className="surface-card flex h-full flex-col gap-3 p-4">
+    <aside className="surface-card flex h-full flex-col gap-4 p-5">
       <header>
-        <h2 className="font-display text-sm uppercase tracking-widest text-text-accent">
+        <p className="font-ui text-[10px] uppercase tracking-[0.25em] text-text-secondary">
           AI Assistant
+        </p>
+        <h2 className="mt-0.5 font-display text-base text-text-primary">
+          Co-pilot
         </h2>
-        <p className="mt-1 text-xs text-text-secondary">
+        <p className="mt-2 text-xs leading-relaxed text-text-secondary">
           Suggestions stay consistent with your worldbuilding. You always have the final word.
         </p>
       </header>

@@ -6,33 +6,60 @@ export interface ModalProps {
   onClose: () => void;
   title?: ReactNode;
   children: ReactNode;
+  /** Maximum width — defaults to "lg". */
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export function Modal({ open, onClose, title, children }: ModalProps) {
+const SIZE_CLASS: Record<NonNullable<ModalProps['size']>, string> = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-2xl',
+};
+
+export function Modal({ open, onClose, title, children, size = 'lg' }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent): void {
       if (e.key === 'Escape') onClose();
     }
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // Prevent body scroll while modal is open.
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
   }, [open, onClose]);
 
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm anim-fade-in"
       role="dialog"
       aria-modal="true"
       onClick={onClose}
     >
       <div
-        className="surface-card w-full max-w-lg border-border-ornate p-6 shadow-glow"
+        className={`surface-modal anim-scale-in w-full ${SIZE_CLASS[size]} p-6`}
         onClick={(e) => e.stopPropagation()}
       >
         {title ? (
-          <h2 className="mb-4 font-display text-2xl text-text-accent">{title}</h2>
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <h2 className="font-display text-lg uppercase tracking-[0.2em] text-text-accent">
+              {title}
+            </h2>
+            <button
+              type="button"
+              aria-label="Close"
+              className="rounded p-1 text-text-muted transition-colors hover:text-text-primary"
+              onClick={onClose}
+            >
+              ✕
+            </button>
+          </div>
         ) : null}
         {children}
       </div>

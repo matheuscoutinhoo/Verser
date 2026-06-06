@@ -10,10 +10,12 @@ export function Card({ title, subtitle, children, className = '', ...rest }: Car
   return (
     <div className={`surface-card p-6 ${className}`} {...rest}>
       {title ? (
-        <header className="mb-4">
-          <h2 className="font-display text-xl text-text-accent">{title}</h2>
+        <header className="mb-5">
+          <h2 className="font-display text-lg uppercase tracking-[0.2em] text-text-accent">
+            {title}
+          </h2>
           {subtitle ? (
-            <p className="mt-1 text-sm text-text-secondary">{subtitle}</p>
+            <p className="mt-1.5 text-sm text-text-secondary">{subtitle}</p>
           ) : null}
         </header>
       ) : null}

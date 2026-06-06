@@ -9,10 +9,6 @@ export interface OrnateDividerProps extends HTMLAttributes<HTMLDivElement> {
 
 /**
  * Decorative horizontal divider with optional center glyph or label.
- *
- *   <OrnateDivider />                    -> simple gold-fade line
- *   <OrnateDivider variant="diamond" />  -> line + center diamond
- *   <OrnateDivider variant="rune" label="Chapter II" />
  */
 export function OrnateDivider({
   variant = 'plain',
@@ -24,17 +20,17 @@ export function OrnateDivider({
     <div
       role="separator"
       aria-orientation="horizontal"
-      className={`relative my-6 flex items-center ${className}`}
+      className={`relative my-8 flex items-center ${className}`}
       {...rest}
     >
-      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border-ornate to-transparent" />
+      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border-strong to-transparent" />
       {variant !== 'plain' ? (
-        <span className="mx-3 select-none font-display text-xs uppercase tracking-[0.35em] text-text-accent">
+        <span className="mx-4 select-none font-display text-[10px] uppercase tracking-[0.35em] text-text-accent/60">
           {variant === 'diamond' ? '◆' : '✦'}
-          {label ? <span className="ml-2 text-text-secondary">{label}</span> : null}
+          {label ? <span className="ml-2 text-text-muted">{label}</span> : null}
         </span>
       ) : null}
-      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border-ornate to-transparent" />
+      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border-strong to-transparent" />
     </div>
   );
 }

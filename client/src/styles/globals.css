@@ -1,8 +1,10 @@
-@import './tokens.css';
+﻿@import './tokens.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* â”€â”€â”€ Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @keyframes verser-spin {
   to {
@@ -13,11 +15,52 @@
 @keyframes verser-fade-in {
   from {
     opacity: 0;
-    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes verser-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes verser-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes verser-overlay-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(6px);
+  }
+}
+
+@keyframes verser-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
   }
 }
 
@@ -32,14 +75,19 @@
     background: var(--bg-primary);
     color: var(--text-primary);
     font-family: var(--font-ui);
+    font-feature-settings: 'kern' 1, 'liga' 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-image: radial-gradient(
-      120% 80% at 50% 0%,
-      rgba(196, 162, 101, 0.06),
-      transparent 60%
-    );
+    /* Two-layer atmospheric background â€” keeps the palette warm without noise */
+    background-image:
+      radial-gradient(80% 50% at 50% 0%, rgba(196, 162, 101, 0.05), transparent 70%),
+      radial-gradient(60% 40% at 100% 100%, rgba(77, 103, 150, 0.04), transparent 70%);
     background-attachment: fixed;
+  }
+
+  ::selection {
+    background: rgba(196, 162, 101, 0.28);
+    color: var(--text-primary);
   }
 
   h1,
@@ -50,39 +98,65 @@
     letter-spacing: 0.02em;
   }
 
-  /* Scrollbars */
+  /* Scrollbars â€” almost invisible until hovered */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--border-primary);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--border-ornate);
+    background: rgba(196, 162, 101, 0.4);
   }
 
   *:focus-visible {
     outline: 1px solid var(--accent-gold);
     outline-offset: 2px;
+    border-radius: 4px;
   }
 }
 
 @layer components {
+  /* â”€â”€â”€ Surfaces â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
   .surface-card {
     background: var(--surface-card);
     border: 1px solid var(--border-primary);
-    border-radius: 0.5rem;
-    transition: border-color 200ms ease, box-shadow 200ms ease;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition:
+      border-color var(--duration-base) var(--ease-out),
+      background var(--duration-base) var(--ease-out),
+      box-shadow var(--duration-base) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
   }
-  .surface-card:hover {
-    border-color: var(--border-ornate);
-    box-shadow: 0 2px 14px -4px rgba(196, 162, 101, 0.35);
+  .surface-card.is-interactive:hover,
+  a.surface-card:hover,
+  button.surface-card:hover {
+    background: var(--surface-card-hover);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
   }
+
+  .surface-modal {
+    background: var(--surface-modal);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .glass-panel {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-primary);
+    backdrop-filter: blur(8px);
+  }
+
+  /* â”€â”€â”€ Decoration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
   .ornate-divider {
     position: relative;
@@ -94,6 +168,23 @@
       transparent
     );
   }
+
+  /* â”€â”€â”€ Animation utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+  .anim-fade-in {
+    animation: verser-fade-in var(--duration-base) var(--ease-out) both;
+  }
+  .anim-fade-up {
+    animation: verser-fade-up var(--duration-base) var(--ease-out) both;
+  }
+  .anim-scale-in {
+    animation: verser-scale-in var(--duration-base) var(--ease-out) both;
+  }
+  .anim-pulse {
+    animation: verser-pulse 1.6s ease-in-out infinite;
+  }
+
+  /* â”€â”€â”€ Editor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
   .editor-surface {
     font-family: var(--font-editor);

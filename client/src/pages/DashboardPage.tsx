@@ -36,23 +36,26 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="space-y-10">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-12">
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-3xl text-text-accent sm:text-4xl">
-            Welcome, {user?.displayName ?? 'Writer'}
+          <p className="font-ui text-[10px] uppercase tracking-[0.25em] text-text-secondary">
+            Dashboard
+          </p>
+          <h1 className="mt-1 font-display text-3xl tracking-tight text-text-primary sm:text-4xl">
+            Welcome, <span className="text-text-accent">{user?.displayName ?? 'Writer'}</span>
           </h1>
-          <p className="text-text-secondary">A bird's-eye view of your craft.</p>
+          <p className="mt-1.5 text-sm text-text-secondary">A bird's-eye view of your craft.</p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>New universe</Button>
+        <Button onClick={() => setModalOpen(true)}>+ New universe</Button>
       </header>
 
-      <section aria-label="Writing statistics">
+      <section aria-label="Writing statistics" className="space-y-4">
         <SectionHeader
           title="Statistics"
           subtitle="Updated in real time as you write."
         />
-        <div className="mt-4 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {statsStatus === 'loading' || !stats ? (
             <div className="col-span-full">
               <Spinner label="Loading stats…" />
@@ -98,9 +101,19 @@ export function DashboardPage() {
 
       <OrnateDivider variant="diamond" />
 
-      <section aria-label="Universes">
-        <SectionHeader title="Universes" subtitle="Worlds you have built." />
-        <div className="mt-4">
+      <section aria-label="Universes" className="space-y-5">
+        <SectionHeader
+          title="Universes"
+          subtitle="Worlds you have built."
+          action={
+            data && data.items.length > 0 ? (
+              <span className="text-[10px] uppercase tracking-[0.2em] text-text-muted">
+                {data.items.length} {data.items.length === 1 ? 'world' : 'worlds'}
+              </span>
+            ) : undefined
+          }
+        />
+        <div>
           {status === 'loading' ? (
             <Spinner label="Loading universes…" />
           ) : status === 'error' ? (
@@ -111,7 +124,7 @@ export function DashboardPage() {
               </Button>
             </Card>
           ) : data && data.items.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {data.items.map((u) => (
                 <UniverseCard key={u.id} universe={u} />
               ))}

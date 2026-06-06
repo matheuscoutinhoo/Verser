@@ -42,12 +42,16 @@ export function ManagerShell({
   children,
 }: ManagerShellProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 anim-fade-up">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h3 className="font-display text-xl text-text-accent">{title}</h3>
+          <h3 className="font-display text-base uppercase tracking-[0.22em] text-text-primary">
+            {title}
+          </h3>
           {description ? (
-            <p className="mt-1 text-sm text-text-secondary">{description}</p>
+            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-text-secondary">
+              {description}
+            </p>
           ) : null}
         </div>
         {primaryAction}

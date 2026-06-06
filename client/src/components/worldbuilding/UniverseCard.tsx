@@ -9,24 +9,17 @@ export function UniverseCard({ universe }: UniverseCardProps) {
   return (
     <Link
       to={`/universes/${universe.id}`}
-      className="surface-card group relative block min-h-[12rem] overflow-hidden p-6 transition-transform duration-200 hover:-translate-y-0.5"
+      className="surface-card is-interactive group relative block aspect-[4/5] overflow-hidden transition-transform duration-base ease-out hover:-translate-y-1"
     >
       {universe.coverUrl ? (
         <>
-          {/* Cover artwork as background */}
           <div
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+            className="absolute inset-0 bg-cover bg-center transition-transform duration-slow ease-out group-hover:scale-105"
             style={{ backgroundImage: `url(${universe.coverUrl})` }}
             aria-hidden
           />
-          {/* Darken so any text remains readable. Stronger at the bottom where the text sits. */}
           <div
-            className="absolute inset-0 bg-gradient-to-t from-bg-primary/95 via-bg-primary/70 to-bg-primary/30"
-            aria-hidden
-          />
-          {/* Subtle gold inner glow */}
-          <div
-            className="absolute inset-0 rounded-md ring-1 ring-inset ring-border-ornate/20"
+            className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/70 to-transparent"
             aria-hidden
           />
         </>
@@ -34,27 +27,34 @@ export function UniverseCard({ universe }: UniverseCardProps) {
         <div className="absolute inset-0 bg-parchment-gradient" aria-hidden />
       )}
 
-      <div className="relative flex h-full min-h-[10rem] flex-col justify-end">
-        <h3
-          className={[
-            'font-display text-2xl text-text-accent drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]',
-          ].join(' ')}
-        >
-          {universe.name}
-        </h3>
+      <div className="relative flex h-full flex-col justify-end gap-2 p-5">
         {universe.genre ? (
-          <p className="mt-1 font-ui text-xs uppercase tracking-widest text-text-secondary">
+          <p className="font-ui text-[10px] uppercase tracking-[0.22em] text-text-accent/80">
             {universe.genre}
           </p>
         ) : null}
+        <h3 className="font-display text-2xl leading-tight text-text-primary drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
+          {universe.name}
+        </h3>
         {universe.description ? (
-          <p className="mt-3 line-clamp-3 text-sm text-text-primary/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.65)]">
+          <p className="line-clamp-2 text-xs leading-relaxed text-text-secondary drop-shadow-[0_1px_1px_rgba(0,0,0,0.7)]">
             {universe.description}
           </p>
         ) : null}
-        <p className="mt-4 text-xs text-text-muted">
-          Created {new Date(universe.createdAt).toLocaleDateString()}
-        </p>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-text-muted">
+            {new Date(universe.createdAt).toLocaleDateString(undefined, {
+              month: 'short',
+              year: 'numeric',
+            })}
+          </span>
+          <span
+            aria-hidden
+            className="text-xs text-text-accent/70 transition-transform duration-fast ease-out group-hover:translate-x-1"
+          >
+            →
+          </span>
+        </div>
       </div>
     </Link>
   );

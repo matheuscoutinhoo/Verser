@@ -25,21 +25,28 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border-primary bg-bg-primary/80 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <NavLink to="/" className="font-display text-2xl tracking-widest text-text-accent">
+    <header className="sticky top-0 z-40 border-b border-border-primary bg-bg-primary/70 backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
+        <NavLink
+          to="/"
+          className="font-display text-lg tracking-[0.35em] text-text-accent transition-colors hover:text-accent-gold-light"
+        >
           VERSER
         </NavLink>
 
-        <nav className="hidden gap-8 md:flex">
+        <nav className="hidden gap-6 md:flex">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
                 [
-                  'font-display text-sm uppercase tracking-[0.2em] transition-colors duration-200',
+                  'relative font-ui text-[11px] uppercase tracking-[0.22em] transition-colors duration-fast',
                   isActive ? 'text-text-accent' : 'text-text-secondary hover:text-text-primary',
+                  // Active underline indicator
+                  isActive
+                    ? 'after:absolute after:-bottom-[18px] after:left-1/2 after:h-px after:w-6 after:-translate-x-1/2 after:bg-accent-gold'
+                    : '',
                 ].join(' ')
               }
             >
@@ -48,11 +55,11 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-4 md:flex">
+        <div className="hidden items-center gap-3 md:flex">
           {isAuthenticated ? (
             <>
-              <span className="text-sm text-text-secondary">{user?.displayName}</span>
-              <Button size="sm" variant="secondary" onClick={handleLogout}>
+              <span className="text-xs text-text-secondary">{user?.displayName}</span>
+              <Button size="sm" variant="ghost" onClick={handleLogout}>
                 Logout
               </Button>
             </>
@@ -60,7 +67,7 @@ export function Navbar() {
             <>
               <NavLink
                 to="/login"
-                className="text-sm uppercase tracking-wider text-text-secondary hover:text-text-primary"
+                className="text-[11px] uppercase tracking-[0.22em] text-text-secondary transition-colors hover:text-text-primary"
               >
                 Login
               </NavLink>
@@ -75,7 +82,7 @@ export function Navbar() {
           type="button"
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={menuOpen}
-          className="rounded border border-border-primary px-3 py-1 text-text-accent md:hidden"
+          className="rounded-md border border-border-primary px-2.5 py-1 text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary md:hidden"
           onClick={() => setMenuOpen((o) => !o)}
         >
           {menuOpen ? '✕' : '☰'}
@@ -83,7 +90,7 @@ export function Navbar() {
       </div>
 
       {menuOpen ? (
-        <nav className="border-t border-border-primary bg-bg-secondary md:hidden">
+        <nav className="border-t border-border-primary bg-bg-secondary anim-fade-in md:hidden">
           <ul className="flex flex-col px-4 py-3">
             {navLinks.map((link) => (
               <li key={link.to}>
@@ -123,8 +130,6 @@ export function Navbar() {
           </ul>
         </nav>
       ) : null}
-
-      <div className="ornate-divider" />
     </header>
   );
 }

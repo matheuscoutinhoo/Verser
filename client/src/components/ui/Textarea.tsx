@@ -13,10 +13,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   const generatedId = useId();
   const inputId = id ?? rest.name ?? generatedId;
   const inputClasses = [
-    'w-full rounded-md border bg-bg-tertiary px-3 py-2 text-text-primary',
-    'placeholder:text-text-muted font-ui transition-colors duration-200',
-    'focus:outline-none focus:border-border-glow',
-    error ? 'border-accent-red' : 'border-border-primary',
+    'w-full rounded-md border bg-transparent px-3 py-2 text-sm text-text-primary',
+    'placeholder:text-text-muted font-ui leading-relaxed',
+    'transition-colors duration-fast ease-out resize-y',
+    'focus:outline-none focus:border-border-glow focus:bg-bg-elevated',
+    error ? 'border-accent-red' : 'border-border-primary hover:border-border-strong',
     className,
   ].join(' ');
 
@@ -25,7 +26,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       {label ? (
         <label
           htmlFor={inputId}
-          className="font-ui text-xs uppercase tracking-wider text-text-secondary"
+          className="font-ui text-[10px] uppercase tracking-[0.18em] text-text-secondary"
         >
           {label}
         </label>

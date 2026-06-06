@@ -19,11 +19,13 @@ export function SectionHeader({
       {...rest}
     >
       <div>
-        <h2 className="font-display text-lg uppercase tracking-[0.3em] text-text-accent">
+        <h2 className="font-display text-xs uppercase tracking-[0.3em] text-text-secondary">
           {title}
         </h2>
         {subtitle ? (
-          <p className="mt-1 text-sm text-text-secondary">{subtitle}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary/80">
+            {subtitle}
+          </p>
         ) : null}
       </div>
       {action ? <div>{action}</div> : null}

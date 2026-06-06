@@ -1,36 +1,68 @@
 :root {
-  /* Backgrounds */
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #111118;
-  --bg-tertiary: #1a1a24;
-  --bg-hover: #22222e;
+  /* Backgrounds — slightly warmer near-black with subtle layering */
+  --bg-primary: #08080d;
+  --bg-secondary: #11111a;
+  --bg-tertiary: #181822;
+  --bg-hover: #1f1f2c;
+  --bg-elevated: rgba(255, 255, 255, 0.02);
 
-  /* Borders / ornaments */
-  --border-primary: #2a2a3a;
+  /* Borders — much subtler defaults; ornate stays for accents */
+  --border-primary: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
   --border-ornate: #8b7355;
   --border-glow: #c4a265;
 
-  /* Text */
-  --text-primary: #e8e4dc;
-  --text-secondary: #9a9484;
-  --text-muted: #5a5650;
+  /* Text — slightly softer paper tones */
+  --text-primary: #ece8df;
+  --text-secondary: rgba(236, 232, 223, 0.62);
+  --text-muted: rgba(236, 232, 223, 0.38);
   --text-accent: #c4a265;
 
-  /* Accents */
+  /* Accents — muted, never neon */
   --accent-gold: #c4a265;
+  --accent-gold-soft: rgba(196, 162, 101, 0.16);
   --accent-gold-light: #d4b87a;
-  --accent-red: #8b3a3a;
-  --accent-green: #3a6b3a;
-  --accent-blue: #3a4a6b;
+  --accent-red: #b04545;
+  --accent-red-soft: rgba(176, 69, 69, 0.18);
+  --accent-green: #4f8a4f;
+  --accent-blue: #4d6796;
 
-  /* Surfaces */
-  --surface-card: rgba(17, 17, 24, 0.85);
-  --surface-modal: rgba(10, 10, 15, 0.95);
-  --surface-overlay: rgba(0, 0, 0, 0.7);
+  /* Surfaces — translucency-first so the page background bleeds through */
+  --surface-card: rgba(17, 17, 26, 0.7);
+  --surface-card-hover: rgba(24, 24, 34, 0.85);
+  --surface-modal: rgba(11, 11, 17, 0.96);
+  --surface-overlay: rgba(0, 0, 0, 0.66);
+  --surface-elevated: rgba(255, 255, 255, 0.03);
 
-  /* Typography */
+  /* Typography (unchanged — keeps the established voice) */
   --font-display: 'Cinzel', 'Cormorant Garamond', serif;
   --font-editor: 'Inter', sans-serif;
   --font-ui: 'Inter', 'Segoe UI', sans-serif;
   --font-size-editor: 12pt;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --duration-slow: 360ms;
+
+  /* Elevation — soft shadows, no harsh black drop */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 6px 24px -8px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  --shadow-lg: 0 18px 50px -16px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  --shadow-glow: 0 0 0 1px rgba(196, 162, 101, 0.18), 0 8px 28px -10px rgba(196, 162, 101, 0.18);
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 1ms;
+    --duration-base: 1ms;
+    --duration-slow: 1ms;
+  }
 }

@@ -23,11 +23,11 @@ function ToolbarButton({ label, title, onClick, active, disabled }: ButtonProps)
       onClick={onClick}
       disabled={disabled}
       className={[
-        'rounded border border-transparent px-2 py-1 text-sm font-medium transition-colors',
+        'rounded-md px-2 py-1 text-xs font-medium transition-colors duration-fast ease-out',
         active
-          ? 'border-border-ornate bg-bg-hover text-text-accent'
-          : 'text-text-secondary hover:border-border-primary hover:text-text-primary',
-        'disabled:cursor-not-allowed disabled:opacity-40',
+          ? 'bg-accent-gold-soft text-text-accent'
+          : 'text-text-secondary hover:bg-bg-elevated hover:text-text-primary',
+        'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent',
       ].join(' ')}
     >
       {label}
@@ -36,7 +36,7 @@ function ToolbarButton({ label, title, onClick, active, disabled }: ButtonProps)
 }
 
 function Divider() {
-  return <span className="mx-1 h-5 w-px bg-border-primary" aria-hidden />;
+  return <span className="mx-1 h-4 w-px bg-border-primary" aria-hidden />;
 }
 
 export function EditorToolbar({ editor, onFullscreenToggle, fullscreen }: EditorToolbarProps) {
@@ -54,7 +54,7 @@ export function EditorToolbar({ editor, onFullscreenToggle, fullscreen }: Editor
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1 border-b border-border-primary bg-bg-secondary/60 px-3 py-2">
+    <div className="flex flex-wrap items-center gap-0.5 border-b border-border-primary bg-bg-secondary/50 px-3 py-1.5 backdrop-blur-sm">
       <ToolbarButton
         label="B"
         title="Bold"

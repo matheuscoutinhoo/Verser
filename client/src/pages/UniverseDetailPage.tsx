@@ -131,43 +131,46 @@ export function UniverseDetailPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Cover hero — banner image with darken overlay so the meta stays readable. */}
-      <section className="relative overflow-hidden rounded-lg border border-border-primary">
+    <div className="space-y-10">
+      {/* Cover hero — minimal silhouette frame, image bleeds top-to-bottom. */}
+      <section className="surface-card overflow-hidden">
         <div
-          className="relative h-48 bg-bg-secondary bg-cover bg-center sm:h-64 lg:h-80"
+          className="relative h-56 bg-bg-secondary bg-cover bg-center sm:h-72 lg:h-96"
           style={data.coverUrl ? { backgroundImage: `url(${data.coverUrl})` } : undefined}
         >
           {!data.coverUrl ? (
             <div className="absolute inset-0 bg-parchment-gradient" aria-hidden />
           ) : null}
+          {/* Subtle dual-tone overlay keeps the bottom legible without darkening the whole frame */}
           <div
-            className="absolute inset-0 bg-gradient-to-t from-bg-primary/95 via-bg-primary/60 to-bg-primary/10"
+            className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/50 to-transparent"
             aria-hidden
           />
-          <div className="relative flex h-full flex-col justify-end p-4 sm:p-6">
+          <div className="relative flex h-full flex-col justify-end p-6 sm:p-8">
             <Link
               to="/dashboard"
-              className="text-xs uppercase tracking-widest text-text-secondary hover:text-text-primary"
+              className="self-start text-[10px] uppercase tracking-[0.22em] text-text-secondary transition-colors hover:text-text-primary"
             >
               ← All universes
             </Link>
-            <h1 className="mt-2 font-display text-3xl text-text-accent drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] sm:text-5xl">
-              {data.name}
-            </h1>
-            {data.genre ? (
-              <p className="mt-1 font-ui text-xs uppercase tracking-widest text-text-secondary">
-                {data.genre}
-              </p>
-            ) : null}
+            <div className="mt-3">
+              {data.genre ? (
+                <p className="font-ui text-[10px] uppercase tracking-[0.25em] text-text-accent/80">
+                  {data.genre}
+                </p>
+              ) : null}
+              <h1 className="mt-1 font-display text-4xl tracking-tight text-text-primary drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] sm:text-5xl lg:text-6xl">
+                {data.name}
+              </h1>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-border-primary bg-bg-secondary/60 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-6">
-          <div className="max-w-3xl text-sm text-text-primary/90">
-            {data.description ?? <span className="text-text-muted">No description yet.</span>}
+        <div className="flex flex-col gap-4 border-t border-border-primary p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="max-w-3xl text-sm leading-relaxed text-text-secondary">
+            {data.description ?? <span className="text-text-muted italic">No description yet.</span>}
           </div>
-          <div className="flex flex-col gap-2 sm:items-end">
+          <div className="flex flex-col gap-3 sm:items-end">
             <CoverImagePicker
               universeId={data.id}
               currentUrl={data.coverUrl}
@@ -182,7 +185,7 @@ export function UniverseDetailPage() {
               <Link to={`/universes/${data.id}/write`}>
                 <Button>Open writing studio →</Button>
               </Link>
-              <Button variant="danger" onClick={() => void handleDelete()} loading={deleting}>
+              <Button variant="ghost" onClick={() => void handleDelete()} loading={deleting}>
                 Delete
               </Button>
             </div>
@@ -190,14 +193,12 @@ export function UniverseDetailPage() {
         </div>
       </section>
 
-      <OrnateDivider variant="diamond" />
-
-      <section aria-label="World bible">
+      <section aria-label="World bible" className="space-y-4">
         <SectionHeader
           title="World bible"
-          subtitle="Counts across every category of your universe."
+          subtitle="A glance at every category of your universe."
         />
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8">
           {SECTIONS.map((section) => (
             <StatCard
               key={section.key}
@@ -209,9 +210,11 @@ export function UniverseDetailPage() {
         </div>
       </section>
 
-      <section aria-label="Worldbuilding workspace" className="space-y-4">
+      <OrnateDivider variant="diamond" />
+
+      <section aria-label="Worldbuilding workspace" className="space-y-6">
         <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
-        <div className="pt-2">
+        <div key={activeTab} className="anim-fade-up">
           {activeTab === 'characters' && (
             <CharactersManager universeId={data.id} onChange={() => void run()} />
           )}
