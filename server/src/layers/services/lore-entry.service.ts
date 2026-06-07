@@ -23,6 +23,8 @@ function toDTO(row: LoreEntry): LoreEntryDTO {
     category: row.category,
     content: row.content,
     importance,
+    imageUrl: row.imageUrl,
+    imageStyle: row.imageStyle,
     customFields: parseJsonField<Record<string, unknown>>(row.customFields, {}),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -64,6 +66,8 @@ export class LoreEntryService {
       category: input.category,
       content: input.content,
       importance: input.importance ?? 'normal',
+      imageUrl: input.imageUrl ?? null,
+      imageStyle: input.imageStyle ?? null,
       customFields: input.customFields ? stringifyJsonField(input.customFields) : null,
     });
     return toDTO(row);
@@ -81,6 +85,8 @@ export class LoreEntryService {
       ...(input.category !== undefined ? { category: input.category } : {}),
       ...(input.content !== undefined ? { content: input.content } : {}),
       ...(input.importance !== undefined ? { importance: input.importance } : {}),
+      ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
+      ...(input.imageStyle !== undefined ? { imageStyle: input.imageStyle } : {}),
       ...(input.customFields !== undefined
         ? { customFields: input.customFields ? stringifyJsonField(input.customFields) : null }
         : {}),
@@ -92,5 +98,16 @@ export class LoreEntryService {
     const existing = await this.repo.findById(id);
     if (!existing || existing.universeId !== universeId) throw new NotFoundError('LoreEntry');
     await this.repo.delete(id);
+  }
+
+  async setImageUrl(
+    universeId: string,
+    id: string,
+    imageUrl: string,
+  ): Promise<LoreEntryDTO> {
+    const existing = await this.repo.findById(id);
+    if (!existing || existing.universeId !== universeId) throw new NotFoundError('LoreEntry');
+    const row = await this.repo.update(id, { imageUrl });
+    return toDTO(row);
   }
 }

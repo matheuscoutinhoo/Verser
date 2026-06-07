@@ -143,6 +143,12 @@ export function createUniverseChildrenRouter(
     validate(idParamSchema, 'params'),
     asyncHandler(sys.delete),
   );
+  router.post(
+    '/systems/:id/image',
+    validate(idParamSchema, 'params'),
+    imageUpload.single('file'),
+    asyncHandler(up.uploadSystemImage),
+  );
 
   // ── Lore entries ───────────────────────────────
   router.get('/lore-entries', validate(paginationSchema, 'query'), asyncHandler(lore.list));
@@ -163,6 +169,12 @@ export function createUniverseChildrenRouter(
     validate(idParamSchema, 'params'),
     asyncHandler(lore.delete),
   );
+  router.post(
+    '/lore-entries/:id/image',
+    validate(idParamSchema, 'params'),
+    imageUpload.single('file'),
+    asyncHandler(up.uploadLoreImage),
+  );
 
   // ── Immutable laws ─────────────────────────────
   router.get('/immutable-laws', asyncHandler(law.list));
@@ -177,6 +189,12 @@ export function createUniverseChildrenRouter(
     '/immutable-laws/:id',
     validate(idParamSchema, 'params'),
     asyncHandler(law.delete),
+  );
+  router.post(
+    '/immutable-laws/:id/image',
+    validate(idParamSchema, 'params'),
+    imageUpload.single('file'),
+    asyncHandler(up.uploadLawImage),
   );
 
   // ── Timeline events ────────────────────────────

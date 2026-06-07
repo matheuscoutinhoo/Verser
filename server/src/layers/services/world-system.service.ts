@@ -20,6 +20,8 @@ function toDTO(row: WorldSystem): WorldSystemDTO {
     rules: row.rules,
     limitations: row.limitations,
     interactions: row.interactions,
+    imageUrl: row.imageUrl,
+    imageStyle: row.imageStyle,
     customFields: parseJsonField<Record<string, unknown>>(row.customFields, {}),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -56,6 +58,8 @@ export class WorldSystemService {
       rules: input.rules ?? null,
       limitations: input.limitations ?? null,
       interactions: input.interactions ?? null,
+      imageUrl: input.imageUrl ?? null,
+      imageStyle: input.imageStyle ?? null,
       customFields: input.customFields ? stringifyJsonField(input.customFields) : null,
     });
     return toDTO(row);
@@ -75,6 +79,8 @@ export class WorldSystemService {
       ...(input.rules !== undefined ? { rules: input.rules } : {}),
       ...(input.limitations !== undefined ? { limitations: input.limitations } : {}),
       ...(input.interactions !== undefined ? { interactions: input.interactions } : {}),
+      ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
+      ...(input.imageStyle !== undefined ? { imageStyle: input.imageStyle } : {}),
       ...(input.customFields !== undefined
         ? { customFields: input.customFields ? stringifyJsonField(input.customFields) : null }
         : {}),
@@ -86,5 +92,16 @@ export class WorldSystemService {
     const existing = await this.repo.findById(id);
     if (!existing || existing.universeId !== universeId) throw new NotFoundError('WorldSystem');
     await this.repo.delete(id);
+  }
+
+  async setImageUrl(
+    universeId: string,
+    id: string,
+    imageUrl: string,
+  ): Promise<WorldSystemDTO> {
+    const existing = await this.repo.findById(id);
+    if (!existing || existing.universeId !== universeId) throw new NotFoundError('WorldSystem');
+    const row = await this.repo.update(id, { imageUrl });
+    return toDTO(row);
   }
 }

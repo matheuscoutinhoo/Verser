@@ -14,6 +14,8 @@ function toDTO(row: ImmutableLaw): ImmutableLawDTO {
     title: row.title,
     description: row.description,
     category: row.category,
+    imageUrl: row.imageUrl,
+    imageStyle: row.imageStyle,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -33,6 +35,8 @@ export class ImmutableLawService {
       title: input.title,
       description: input.description,
       category: input.category,
+      imageUrl: input.imageUrl ?? null,
+      imageStyle: input.imageStyle ?? null,
     });
     return toDTO(row);
   }
@@ -48,6 +52,8 @@ export class ImmutableLawService {
       ...(input.title !== undefined ? { title: input.title } : {}),
       ...(input.description !== undefined ? { description: input.description } : {}),
       ...(input.category !== undefined ? { category: input.category } : {}),
+      ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
+      ...(input.imageStyle !== undefined ? { imageStyle: input.imageStyle } : {}),
     });
     return toDTO(row);
   }
@@ -56,5 +62,16 @@ export class ImmutableLawService {
     const existing = await this.repo.findById(id);
     if (!existing || existing.universeId !== universeId) throw new NotFoundError('ImmutableLaw');
     await this.repo.delete(id);
+  }
+
+  async setImageUrl(
+    universeId: string,
+    id: string,
+    imageUrl: string,
+  ): Promise<ImmutableLawDTO> {
+    const existing = await this.repo.findById(id);
+    if (!existing || existing.universeId !== universeId) throw new NotFoundError('ImmutableLaw');
+    const row = await this.repo.update(id, { imageUrl });
+    return toDTO(row);
   }
 }

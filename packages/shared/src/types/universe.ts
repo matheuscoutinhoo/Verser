@@ -172,6 +172,8 @@ export interface WorldSystem extends EntityTimestamps {
   rules: string | null;
   limitations: string | null;
   interactions: string | null;
+  imageUrl: string | null;
+  imageStyle: string | null;
   customFields: Record<string, unknown>;
 }
 
@@ -182,6 +184,8 @@ export interface UpsertWorldSystemRequest {
   rules?: string | null;
   limitations?: string | null;
   interactions?: string | null;
+  imageUrl?: string | null;
+  imageStyle?: string | null;
   customFields?: Record<string, unknown>;
 }
 
@@ -196,6 +200,8 @@ export interface LoreEntry extends EntityTimestamps {
   category: string;
   content: string;
   importance: LoreImportance;
+  imageUrl: string | null;
+  imageStyle: string | null;
   customFields: Record<string, unknown>;
 }
 
@@ -204,6 +210,8 @@ export interface UpsertLoreEntryRequest {
   category: string;
   content: string;
   importance?: LoreImportance;
+  imageUrl?: string | null;
+  imageStyle?: string | null;
   customFields?: Record<string, unknown>;
 }
 
@@ -217,12 +225,16 @@ export interface ImmutableLaw extends EntityTimestamps {
   title: string;
   description: string;
   category: string;
+  imageUrl: string | null;
+  imageStyle: string | null;
 }
 
 export interface UpsertImmutableLawRequest {
   title: string;
   description: string;
   category: string;
+  imageUrl?: string | null;
+  imageStyle?: string | null;
 }
 
 // ─────────────────────────────────────────────
