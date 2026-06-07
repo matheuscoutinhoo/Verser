@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { LoreImportance, TimelineEvent, UpsertTimelineEventInput } from '@verser/shared';
 import { LORE_IMPORTANCE } from '@verser/shared';
 import { Button } from '../../ui/Button';
+import { ChevronDownIcon, ChevronUpIcon } from '../../ui/Icons';
 import { Input } from '../../ui/Input';
 import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
@@ -122,15 +123,30 @@ export function TimelineManager({ universeId, onChange }: TimelineManagerProps) 
     const a = ordered[idx];
     const b = ordered[target];
     if (!a || !b) return;
+
+    // Snapshot for rollback if the server rejects the swap.
+    const previous = crud.items;
+    // Optimistic swap: flip the two items' sortOrder locally so React only
+    // re-renders the two affected list rows, no full-list refetch +
+    // re-mount cascade that made the page feel like it reloaded.
+    crud.setItems((prev) =>
+      prev.map((item) => {
+        if (item.id === a.id) return { ...item, sortOrder: b.sortOrder };
+        if (item.id === b.id) return { ...item, sortOrder: a.sortOrder };
+        return item;
+      }),
+    );
+
     try {
       await timelineService.reorder(universeId, [
         { id: a.id, sortOrder: b.sortOrder },
         { id: b.id, sortOrder: a.sortOrder },
       ]);
-      await crud.refresh();
       onChange?.();
     } catch {
-      /* show would clutter; rely on shell error surfacing on subsequent calls */
+      // Rollback the optimistic swap; the user sees the row return to its
+      // previous position rather than a stale-looking inconsistent state.
+      crud.setItems(() => previous);
     }
   }
 
@@ -169,20 +185,24 @@ export function TimelineManager({ universeId, onChange }: TimelineManagerProps) 
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
-                    size="sm"
+                    size="icon"
                     variant="ghost"
+                    title="Move earlier"
+                    aria-label="Move earlier"
                     disabled={idx === 0}
                     onClick={() => void move(ev, -1)}
                   >
-                    ↑
+                    <ChevronUpIcon />
                   </Button>
                   <Button
-                    size="sm"
+                    size="icon"
                     variant="ghost"
+                    title="Move later"
+                    aria-label="Move later"
                     disabled={idx === arr.length - 1}
                     onClick={() => void move(ev, 1)}
                   >
-                    ↓
+                    <ChevronDownIcon />
                   </Button>
                   <Button size="sm" variant="secondary" onClick={() => openEdit(ev)}>
                     Edit

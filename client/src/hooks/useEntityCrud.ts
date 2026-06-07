@@ -21,6 +21,10 @@ export interface EntityCrudHandle<T, CreateInput, UpdateInput>
   create: (input: CreateInput) => Promise<T>;
   update: (id: string, input: UpdateInput) => Promise<T>;
   remove: (id: string) => Promise<void>;
+  /** Optimistic in-place update of the items array — does NOT hit the API.
+   *  Use this when the caller already knows the new shape (e.g. reorder)
+   *  and wants to avoid the refresh round-trip + spinner. */
+  setItems: (updater: (prev: T[]) => T[]) => void;
 }
 
 /**
@@ -90,5 +94,6 @@ export function useEntityCrud<T extends { id: string }, CreateInput, UpdateInput
         return api.update(id, input);
       }),
     remove: (id) => wrap(() => api.delete(id)),
+    setItems: (updater) => setState((s) => ({ ...s, items: updater(s.items) })),
   };
 }
