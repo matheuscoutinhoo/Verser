@@ -66,16 +66,16 @@ export function TimelineManager({ universeId, onChange }: TimelineManagerProps) 
   const [form, setForm] = useState<FormState>(EMPTY);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Stable sorted view — derive once per render so JSX, animation ids and
-  // any future drag-and-drop wiring all see the same order.
+  // Stable sorted view — derive once per render so JSX and any future
+  // drag-and-drop wiring all see the same order.
   const orderedItems = useMemo(
     () => [...crud.items].sort((a, b) => a.sortOrder - b.sortOrder),
     [crud.items],
   );
-  const orderedIds = useMemo(() => orderedItems.map((e) => e.id), [orderedItems]);
-  // FLIP animation: when the id order changes, each tracked <li> slides
-  // smoothly from its previous position to its new one.
-  const flip = useFlipAnimation([orderedIds.join('|')]);
+  // FLIP animation handle — `snapshot()` is called manually before each
+  // reorder so the hook records the "before" rects; `register()` keeps
+  // it pointing at the live <li> nodes.
+  const flip = useFlipAnimation();
 
   function openCreate(): void {
     setEditing({ mode: 'create' });
@@ -138,6 +138,10 @@ export function TimelineManager({ universeId, onChange }: TimelineManagerProps) 
 
     // Snapshot for rollback if the server rejects the swap.
     const previous = crud.items;
+    // Capture the cards' current bounding rects BEFORE we change the
+    // order. The FLIP hook reads these in its layout effect and
+    // animates each moved <li> from its old position to the new one.
+    flip.snapshot();
     // Optimistic swap: flip the two items' sortOrder locally so React only
     // re-renders the two affected list rows, no full-list refetch +
     // re-mount cascade that made the page feel like it reloaded.
@@ -160,6 +164,7 @@ export function TimelineManager({ universeId, onChange }: TimelineManagerProps) 
     } catch {
       // Rollback the optimistic swap; the user sees the row return to its
       // previous position rather than a stale-looking inconsistent state.
+      flip.snapshot();
       crud.setItems(() => previous);
     }
   }

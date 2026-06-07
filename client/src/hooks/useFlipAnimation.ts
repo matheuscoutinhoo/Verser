@@ -1,99 +1,129 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 
 export interface UseFlipAnimationOptions {
-  /** Animation duration in ms. Default: 240. */
+  /** Animation duration in ms. Default: 320. */
   duration?: number;
-  /** Easing function. Default: 'cubic-bezier(0.4, 0, 0.2, 1)'. */
+  /** Easing function. Default: 'cubic-bezier(0.22, 1, 0.36, 1)' — easeOutQuint. */
   easing?: string;
   /** Skip the animation when the user prefers reduced motion. Default: true. */
   respectReducedMotion?: boolean;
 }
 
 /**
- * FLIP-style animation hook for list reordering.
+ * FLIP animation hook for list reordering.
  *
- * FLIP = First, Last, Invert, Play. We record each tracked element's
- * `getBoundingClientRect()` BEFORE React commits (`useRef` updated at
- * render-time), then in `useLayoutEffect` compute the delta between
- * the old and new positions and apply an instant counter-translation
- * + animate it back to zero. The result: the user sees rows smoothly
- * slide between positions without us having to touch the DOM tree.
+ * FLIP = First, Last, Invert, Play.
+ *
+ *   1. First  — caller calls `snapshot()` BEFORE changing the order.
+ *      We record every tracked element's bounding rect.
+ *   2. Last   — React commits the new order; the browser computes
+ *      the new layout.
+ *   3. Invert — in `useLayoutEffect`, for each tracked element we
+ *      diff old vs new rect and apply an instant
+ *      `transform: translate(dx, dy)` that visually pins it back to
+ *      where it was.
+ *   4. Play   — clear the transform with a CSS transition; the
+ *      element slides smoothly from the inverted position to its
+ *      real new spot.
+ *
+ * Why an explicit `snapshot()` instead of relying on the render cycle?
+ * Because React calls the `ref` callback only AFTER the DOM is already
+ * in its new position — by the time `useLayoutEffect` runs, the
+ * "before" rect would have been overwritten. Calling `snapshot()`
+ * synchronously, right before the state update, gives us a reliable
+ * "before" measurement.
  *
  * Usage:
- *   const { register } = useFlipAnimation([items.map(i => i.id)]);
- *   …
- *   <li ref={(el) => register(item.id, el)} />
  *
- * The `deps` argument is the trigger — pass anything that captures the
- * "current order" (typically the ids array). When it changes, we
- * compare positions and animate.
+ *   const flip = useFlipAnimation();
+ *   const handleSwap = () => {
+ *     flip.snapshot();           // capture First positions
+ *     setItems(reorder(items));  // trigger React commit (Last)
+ *   };
+ *   <li ref={(el) => flip.register(item.id, el)} />
+ *   // Invert + Play happen automatically inside the next layout effect.
  */
-export function useFlipAnimation(deps: ReadonlyArray<unknown>, options: UseFlipAnimationOptions = {}) {
-  const { duration = 240, easing = 'cubic-bezier(0.4, 0, 0.2, 1)', respectReducedMotion = true } =
-    options;
+export function useFlipAnimation(options: UseFlipAnimationOptions = {}) {
+  const {
+    duration = 320,
+    easing = 'cubic-bezier(0.22, 1, 0.36, 1)',
+    respectReducedMotion = true,
+  } = options;
 
-  // Current keyed element refs.
   const nodes = useRef(new Map<string, HTMLElement>());
-  // Last-known bounding rects per key, captured at the start of each render.
-  const prevRects = useRef(new Map<string, DOMRect>());
+  // Set by `snapshot()`; consumed and cleared by the next layout effect.
+  const pendingRects = useRef<Map<string, DOMRect> | null>(null);
 
-  // Snapshot rects right before the browser paints the new layout.
-  // This runs synchronously after React commits but before the screen
-  // updates, so we can read the *new* positions inside useLayoutEffect.
-  // We still need the *previous* positions — those were saved at the
-  // end of the last render cycle (see further down).
-  useLayoutEffect(() => {
-    if (respectReducedMotion && typeof window !== 'undefined') {
-      const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-      if (mq?.matches) {
-        // Skip animation entirely; just refresh the prev-rect cache.
-        for (const [key, el] of nodes.current) {
-          prevRects.current.set(key, el.getBoundingClientRect());
-        }
-        return;
-      }
-    }
-
-    // Compute deltas and animate each moved element.
+  const snapshot = useCallback(() => {
+    const map = new Map<string, DOMRect>();
     for (const [key, el] of nodes.current) {
-      const prev = prevRects.current.get(key);
-      const next = el.getBoundingClientRect();
-      if (prev) {
-        const dx = prev.left - next.left;
-        const dy = prev.top - next.top;
-        if (dx !== 0 || dy !== 0) {
-          // Invert: instantly move the element back to where it was.
-          el.style.transform = `translate(${dx}px, ${dy}px)`;
-          el.style.transition = 'transform 0s';
-          // Force a reflow so the browser registers the inverted position
-          // before we start the play animation.
-          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-          el.offsetHeight;
-          // Play: clear the transform with a transition — element slides
-          // from the old position to its new one.
-          el.style.transition = `transform ${duration}ms ${easing}`;
-          el.style.transform = '';
-        }
-      }
-      prevRects.current.set(key, next);
+      map.set(key, el.getBoundingClientRect());
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+    pendingRects.current = map;
+  }, []);
 
-  return {
-    /** ref callback — pass to each list item that should animate. */
-    register: (key: string, el: HTMLElement | null) => {
-      if (el) {
-        nodes.current.set(key, el);
-        // Seed the prev-rect cache on first mount so subsequent layouts
-        // can compute a delta.
-        if (!prevRects.current.has(key)) {
-          prevRects.current.set(key, el.getBoundingClientRect());
-        }
-      } else {
-        nodes.current.delete(key);
-        prevRects.current.delete(key);
-      }
-    },
-  };
+  // Runs after EVERY commit. If a snapshot is pending, animate the deltas.
+  useLayoutEffect(() => {
+    const before = pendingRects.current;
+    if (!before) return;
+    pendingRects.current = null;
+
+    if (
+      respectReducedMotion &&
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) {
+      return;
+    }
+
+    for (const [key, el] of nodes.current) {
+      const prev = before.get(key);
+      if (!prev) continue;
+      const next = el.getBoundingClientRect();
+      const dx = prev.left - next.left;
+      const dy = prev.top - next.top;
+      if (dx === 0 && dy === 0) continue;
+
+      // Cancel any animation already in flight so back-to-back swaps
+      // don't visually queue up. The fresh getBoundingClientRect above
+      // already reflects the current on-screen position.
+      el.getAnimations?.().forEach((a) => a.cancel());
+
+      // Lift the moving card above its neighbours during the slide so
+      // overlapping cards read as "passing through" instead of stacked.
+      const prevZIndex = el.style.zIndex;
+      const prevWillChange = el.style.willChange;
+      el.style.willChange = 'transform';
+      el.style.zIndex = '5';
+
+      const animation = el.animate(
+        [
+          { transform: `translate(${dx}px, ${dy}px)` },
+          { transform: 'translate(0, 0)' },
+        ],
+        {
+          duration,
+          easing,
+          fill: 'both',
+        },
+      );
+
+      const cleanup = () => {
+        el.style.willChange = prevWillChange;
+        el.style.zIndex = prevZIndex;
+      };
+      animation.onfinish = cleanup;
+      animation.oncancel = cleanup;
+    }
+  });
+
+  const register = useCallback((key: string, el: HTMLElement | null) => {
+    if (el) {
+      nodes.current.set(key, el);
+    } else {
+      nodes.current.delete(key);
+    }
+  }, []);
+
+  return { snapshot, register };
 }
