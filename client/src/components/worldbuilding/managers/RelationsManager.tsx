@@ -41,6 +41,7 @@ export function RelationsManager({ universeId, onChange }: RelationsManagerProps
   const { confirm, ConfirmDialogPortal } = useConfirmDialog();
 
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [charactersStatus, setCharactersStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [charactersError, setCharactersError] = useState<string | null>(null);
 
   const crud = useEntityCrud<CharacterRelation, UpsertCharacterRelationInput, never>(
@@ -57,18 +58,41 @@ export function RelationsManager({ universeId, onChange }: RelationsManagerProps
 
   useEffect(() => {
     let cancelled = false;
+    setCharactersStatus('loading');
+    setCharactersError(null);
     void (async () => {
       try {
         const list = await charactersService.list(universeId, { limit: 100 });
-        if (!cancelled) setCharacters(list.items);
+        if (cancelled) return;
+        setCharacters(list.items);
+        setCharactersStatus('ready');
       } catch (err) {
-        if (!cancelled) setCharactersError(err instanceof Error ? err.message : 'Failed to load characters.');
+        if (cancelled) return;
+        setCharactersError(err instanceof Error ? err.message : 'Failed to load characters.');
+        setCharactersStatus('error');
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [universeId, crud.items]);
+    // Only re-fetch on universe change; relations are independent of characters.
+  }, [universeId]);
+
+  // Refetch characters on demand — used by the manual refresh button and by
+  // openCreate so the picker always reflects the latest cast (the user may
+  // have added characters on another tab since this manager mounted).
+  const refreshCharacters = async (): Promise<void> => {
+    setCharactersStatus('loading');
+    setCharactersError(null);
+    try {
+      const list = await charactersService.list(universeId, { limit: 100 });
+      setCharacters(list.items);
+      setCharactersStatus('ready');
+    } catch (err) {
+      setCharactersError(err instanceof Error ? err.message : 'Failed to load characters.');
+      setCharactersStatus('error');
+    }
+  };
 
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -88,6 +112,8 @@ export function RelationsManager({ universeId, onChange }: RelationsManagerProps
   );
 
   function openCreate(): void {
+    // Re-fetch the cast in case the user added characters on another tab.
+    void refreshCharacters();
     setForm({
       ...EMPTY,
       fromCharacterId: characters[0]?.id ?? '',
@@ -144,7 +170,12 @@ export function RelationsManager({ universeId, onChange }: RelationsManagerProps
     }
   }
 
-  const noCharacters = characters.length < 2;
+  // Only block when we know for sure the universe doesn't have 2 characters.
+  // While the request is in flight (status idle/loading), treat the panel as
+  // enabled — stale-empty would falsely tell the user to "add characters
+  // first" right after they finished doing so.
+  const charactersLoaded = charactersStatus === 'ready';
+  const noCharacters = charactersLoaded && characters.length < 2;
 
   return (
     <ManagerShell
@@ -155,16 +186,27 @@ export function RelationsManager({ universeId, onChange }: RelationsManagerProps
       isEmpty={crud.items.length === 0}
       emptyGlyph="✧"
       emptyDescription={
-        noCharacters
-          ? 'Add at least two characters first to start linking them.'
-          : 'Connect your characters to build the social graph the AI uses for context.'
+        !charactersLoaded
+          ? 'Loading characters…'
+          : noCharacters
+            ? 'Add at least two characters first to start linking them.'
+            : 'Connect your characters to build the social graph the AI uses for context.'
       }
       emptyAction={
-        noCharacters ? null : <Button onClick={openCreate}>Add relation</Button>
+        !charactersLoaded ? null : noCharacters ? (
+          // Bloqueado porque a tab Relations é keep-alive: se o user criou
+          // characters em outra aba depois deste mount, oferece um refetch
+          // manual aqui em vez de obrigá-lo a recarregar a página.
+          <Button variant="secondary" onClick={() => void refreshCharacters()}>
+            Refresh characters
+          </Button>
+        ) : (
+          <Button onClick={openCreate}>Add relation</Button>
+        )
       }
       onRetry={() => void crud.refresh()}
       primaryAction={
-        <Button onClick={openCreate} disabled={crud.mutating || noCharacters}>
+        <Button onClick={openCreate} disabled={crud.mutating || !charactersLoaded || noCharacters}>
           New relation
         </Button>
       }
