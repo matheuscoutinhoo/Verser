@@ -9,6 +9,7 @@ import { Select } from '../../ui/Select';
 import { Textarea } from '../../ui/Textarea';
 import { useConfirmDialog } from '../../ui/useConfirmDialog';
 import { useEntityCrud } from '../../../hooks/useEntityCrud';
+import { useFlipAnimation } from '../../../hooks/useFlipAnimation';
 import { timelineService } from '../../../services/worldbuilding.service';
 import { ManagerShell } from '../ManagerShell';
 
@@ -64,6 +65,17 @@ export function TimelineManager({ universeId, onChange }: TimelineManagerProps) 
   const [editing, setEditing] = useState<Editing | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Stable sorted view — derive once per render so JSX, animation ids and
+  // any future drag-and-drop wiring all see the same order.
+  const orderedItems = useMemo(
+    () => [...crud.items].sort((a, b) => a.sortOrder - b.sortOrder),
+    [crud.items],
+  );
+  const orderedIds = useMemo(() => orderedItems.map((e) => e.id), [orderedItems]);
+  // FLIP animation: when the id order changes, each tracked <li> slides
+  // smoothly from its previous position to its new one.
+  const flip = useFlipAnimation([orderedIds.join('|')]);
 
   function openCreate(): void {
     setEditing({ mode: 'create' });
@@ -177,12 +189,11 @@ export function TimelineManager({ universeId, onChange }: TimelineManagerProps) 
           aria-hidden
           className="pointer-events-none absolute bottom-2 left-3 top-2 w-px bg-gradient-to-b from-accent-gold-light via-accent-gold to-transparent opacity-70 shadow-[0_0_10px_rgba(196,162,101,0.45)]"
         />
-        {[...crud.items]
-          .sort((a, b) => a.sortOrder - b.sortOrder)
-          .map((ev, idx, arr) => (
+        {orderedItems.map((ev, idx, arr) => (
             <li
               key={ev.id}
-              className="surface-card gold-glow-hover group relative overflow-hidden p-4 transition-colors duration-base"
+              ref={(el) => flip.register(ev.id, el)}
+              className="surface-card gold-glow-hover group relative overflow-hidden p-4 will-change-transform"
             >
               {/* Gold diamond marker — small rotated square with a soft halo,
                   echoing the OrnateDivider glyphs. */}
