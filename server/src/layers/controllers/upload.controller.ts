@@ -2,9 +2,7 @@ import type { Request, Response } from 'express';
 import { ValidationError } from '../../errors';
 import type { IStorageProvider } from '../../providers/storage/types';
 import type { CharacterService } from '../services/character.service';
-import type { ImmutableLawService } from '../services/immutable-law.service';
 import type { LocationService } from '../services/location.service';
-import type { LoreEntryService } from '../services/lore-entry.service';
 import type { UniverseService } from '../services/universe.service';
 import type { WorldSystemService } from '../services/world-system.service';
 import { jsonOk, requireUniverse, requireUser } from './controller-helpers';
@@ -16,8 +14,6 @@ export class UploadController {
     private readonly characterService: CharacterService,
     private readonly locationService: LocationService,
     private readonly worldSystemService: WorldSystemService,
-    private readonly loreEntryService: LoreEntryService,
-    private readonly immutableLawService: ImmutableLawService,
   ) {}
 
   uploadCover = async (req: Request, res: Response): Promise<void> => {
@@ -75,19 +71,5 @@ export class UploadController {
       this.worldSystemService.setImageUrl(uid, id, url),
     );
     jsonOk(res, { system, file });
-  };
-
-  uploadLoreImage = async (req: Request, res: Response): Promise<void> => {
-    const { entity: lore, file } = await this.storeAndApply(req, (uid, id, url) =>
-      this.loreEntryService.setImageUrl(uid, id, url),
-    );
-    jsonOk(res, { lore, file });
-  };
-
-  uploadLawImage = async (req: Request, res: Response): Promise<void> => {
-    const { entity: law, file } = await this.storeAndApply(req, (uid, id, url) =>
-      this.immutableLawService.setImageUrl(uid, id, url),
-    );
-    jsonOk(res, { law, file });
   };
 }

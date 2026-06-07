@@ -203,8 +203,6 @@ export function createContainer(overrides: ContainerOverrides = {}): Container {
     characterService,
     locationService,
     worldSystemService,
-    loreEntryService,
-    immutableLawService,
   );
   const writingController = new WritingController(writingService);
   const aiController = new AIController(aiService);

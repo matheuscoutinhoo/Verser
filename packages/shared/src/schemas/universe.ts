@@ -166,8 +166,6 @@ export const upsertLoreEntrySchema = z.object({
   category: categorySchema,
   content: requiredLongTextSchema,
   importance: importanceSchema.optional(),
-  imageUrl: z.string().url().nullable().optional(),
-  imageStyle: z.string().trim().max(30).nullable().optional(),
   customFields: customFieldsSchema,
 });
 
@@ -184,8 +182,6 @@ export const upsertImmutableLawSchema = z.object({
   title: titleSchema,
   description: requiredLongTextSchema,
   category: categorySchema,
-  imageUrl: z.string().url().nullable().optional(),
-  imageStyle: z.string().trim().max(30).nullable().optional(),
 });
 
 export const updateImmutableLawSchema = upsertImmutableLawSchema.partial().refine(

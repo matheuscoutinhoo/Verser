@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { LoreEntry, LoreImportance, UpsertLoreEntryInput } from '@verser/shared';
 import { LORE_IMPORTANCE } from '@verser/shared';
-import { AIImageGeneratorModal } from '../../ai/AIImageGeneratorModal';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import { Modal } from '../../ui/Modal';
@@ -9,12 +8,10 @@ import { Select } from '../../ui/Select';
 import { Textarea } from '../../ui/Textarea';
 import { useConfirmDialog } from '../../ui/useConfirmDialog';
 import { useEntityCrud } from '../../../hooks/useEntityCrud';
-import { useEntityImageFlow } from '../../../hooks/useEntityImageFlow';
 import { loreService } from '../../../services/worldbuilding.service';
+import { EntityCard } from '../EntityCard';
 import { EntityDetailModal } from '../EntityDetailModal';
-import { InlineImagePicker } from '../InlineImagePicker';
 import { ManagerShell } from '../ManagerShell';
-import { PosterCard } from '../PosterCard';
 
 export interface LoreManagerProps {
   universeId: string;
@@ -48,13 +45,12 @@ function toForm(e: LoreEntry): FormState {
   };
 }
 
-function toInput(form: FormState, imageUrl: string | null): UpsertLoreEntryInput {
+function toInput(form: FormState): UpsertLoreEntryInput {
   return {
     title: form.title.trim(),
     category: form.category.trim(),
     content: form.content,
     importance: form.importance,
-    imageUrl: imageUrl ?? undefined,
   };
 }
 
@@ -83,14 +79,6 @@ export function LoreManager({ universeId, onChange }: LoreManagerProps) {
     [universeId, categoryFilter, importanceFilter],
   );
 
-  const image = useEntityImageFlow<LoreEntry>({
-    applyAIForExisting: async (entry, url) => {
-      await loreService.update(universeId, entry.id, { imageUrl: url });
-      await crud.refresh();
-      onChange?.();
-    },
-  });
-
   const [editing, setEditing] = useState<Editing | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -105,62 +93,30 @@ export function LoreManager({ universeId, onChange }: LoreManagerProps) {
   function openCreate(): void {
     setEditing({ mode: 'create' });
     setForm(EMPTY);
-    image.resetImageState();
     setSubmitError(null);
   }
 
   function openEdit(entry: LoreEntry): void {
     setEditing({ mode: 'edit', entry });
     setForm(toForm(entry));
-    image.setImageState(() => ({ imageUrl: entry.imageUrl ?? null, previewUrl: null, pendingFile: null }));
     setSubmitError(null);
-  }
-
-  function closeForm(): void {
-    image.cleanupPreview();
-    setEditing(null);
   }
 
   async function handleSubmit(): Promise<void> {
     if (!editing) return;
-    const input = toInput(form, image.imageState.imageUrl);
+    const input = toInput(form);
     if (!input.title || !input.content || !input.category) {
       setSubmitError('Title, category and content are required.');
       return;
     }
     try {
-      if (editing.mode === 'create') {
-        const created = await crud.create(input);
-        if (image.imageState.pendingFile && created) {
-          try {
-            await image.flushPendingUpload(created, (entity, file) =>
-              loreService.uploadImage(universeId, entity.id, file),
-            );
-            await crud.refresh();
-          } catch (err) {
-            setSubmitError(
-              err instanceof Error
-                ? `Lore entry created, but image upload failed: ${err.message}`
-                : 'Lore entry created, but image upload failed.',
-            );
-            return;
-          }
-        }
-      } else {
-        await crud.update(editing.entry.id, input);
-      }
-      closeForm();
+      if (editing.mode === 'create') await crud.create(input);
+      else await crud.update(editing.entry.id, input);
+      setEditing(null);
       onChange?.();
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Could not save lore entry.');
     }
-  }
-
-  async function handleImageUpload(entry: LoreEntry, file: File): Promise<string> {
-    const result = await loreService.uploadImage(universeId, entry.id, file);
-    await crud.refresh();
-    onChange?.();
-    return result.lore.imageUrl ?? '';
   }
 
   async function handleDelete(entry: LoreEntry): Promise<void> {
@@ -222,13 +178,12 @@ export function LoreManager({ universeId, onChange }: LoreManagerProps) {
         </>
       }
     >
-      <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {crud.items.map((e) => (
           <li key={e.id}>
-            <PosterCard
+            <EntityCard
               name={e.title}
-              imageUrl={e.imageUrl ?? null}
-              fallbackGlyph={IMPORTANCE_GLYPH[e.importance]}
+              glyph={IMPORTANCE_GLYPH[e.importance]}
               caption={`${e.category} · ${e.importance}`}
               title={e.title}
               snippet={e.content}
@@ -248,7 +203,7 @@ export function LoreManager({ universeId, onChange }: LoreManagerProps) {
         open={viewing !== null}
         onClose={() => setViewing(null)}
         title={viewing?.title ?? ''}
-        imageUrl={viewing?.imageUrl ?? null}
+        imageUrl={null}
         fallbackGlyph={viewing ? IMPORTANCE_GLYPH[viewing.importance] : '✧'}
         sidebar={{
           label: 'Category · Importance',
@@ -274,7 +229,7 @@ export function LoreManager({ universeId, onChange }: LoreManagerProps) {
 
       <Modal
         open={editing !== null}
-        onClose={closeForm}
+        onClose={() => setEditing(null)}
         title={editing?.mode === 'edit' ? `Edit ${editing.entry.title}` : 'New lore entry'}
       >
         <form
@@ -284,28 +239,6 @@ export function LoreManager({ universeId, onChange }: LoreManagerProps) {
             void handleSubmit();
           }}
         >
-          {editing ? (
-            <div className="flex flex-col gap-2">
-              <label className="font-ui text-xs uppercase tracking-wider text-text-secondary">
-                Imagery
-              </label>
-              <InlineImagePicker
-                currentUrl={
-                  image.imageState.previewUrl ??
-                  image.imageState.imageUrl ??
-                  (editing.mode === 'edit' ? editing.entry.imageUrl : null)
-                }
-                onUpload={async (file) => {
-                  if (editing.mode === 'edit') return handleImageUpload(editing.entry, file);
-                  return image.handleUploadForCreate(file);
-                }}
-                onGenerate={() => {
-                  if (editing.mode === 'edit') image.setAiTarget(editing.entry);
-                  else image.openAIForCreate();
-                }}
-              />
-            </div>
-          ) : null}
           <Input
             label="Title"
             value={form.title}
@@ -332,7 +265,7 @@ export function LoreManager({ universeId, onChange }: LoreManagerProps) {
           />
           {submitError ? <p className="text-sm text-accent-red">{submitError}</p> : null}
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="secondary" onClick={closeForm}>
+            <Button type="button" variant="secondary" onClick={() => setEditing(null)}>
               Cancel
             </Button>
             <Button type="submit" loading={crud.mutating}>
@@ -341,24 +274,6 @@ export function LoreManager({ universeId, onChange }: LoreManagerProps) {
           </div>
         </form>
       </Modal>
-
-      {image.aiTarget ? (
-        <AIImageGeneratorModal
-          open={image.aiTarget !== null}
-          onClose={() => image.setAiTarget(null)}
-          universeId={universeId}
-          defaultPrompt={`Illustration of "${image.aiTarget.title}" (${image.aiTarget.category}): ${image.aiTarget.content.slice(0, 200)}`}
-          onAccept={(url) => image.handleAIAcceptForExisting(image.aiTarget!, url)}
-        />
-      ) : null}
-
-      <AIImageGeneratorModal
-        open={image.aiOpenForCreate}
-        onClose={image.closeAIForCreate}
-        universeId={universeId}
-        defaultPrompt={`Illustration of "${form.title || 'this lore entry'}" (${form.category}): ${form.content.slice(0, 200)}`}
-        onAccept={image.handleAIAcceptForCreate}
-      />
 
       <ConfirmDialogPortal />
     </ManagerShell>

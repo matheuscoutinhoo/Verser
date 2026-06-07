@@ -177,8 +177,6 @@ model LoreEntry {
   category     String
   content      String
   importance   String   @default("normal")
-  imageUrl     String?
-  imageStyle   String?
   customFields String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -195,8 +193,6 @@ model ImmutableLaw {
   title       String
   description String
   category    String
-  imageUrl    String?
-  imageStyle  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

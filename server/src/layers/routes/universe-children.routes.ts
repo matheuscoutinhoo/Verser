@@ -169,12 +169,6 @@ export function createUniverseChildrenRouter(
     validate(idParamSchema, 'params'),
     asyncHandler(lore.delete),
   );
-  router.post(
-    '/lore-entries/:id/image',
-    validate(idParamSchema, 'params'),
-    imageUpload.single('file'),
-    asyncHandler(up.uploadLoreImage),
-  );
 
   // ── Immutable laws ─────────────────────────────
   router.get('/immutable-laws', asyncHandler(law.list));
@@ -189,12 +183,6 @@ export function createUniverseChildrenRouter(
     '/immutable-laws/:id',
     validate(idParamSchema, 'params'),
     asyncHandler(law.delete),
-  );
-  router.post(
-    '/immutable-laws/:id/image',
-    validate(idParamSchema, 'params'),
-    imageUpload.single('file'),
-    asyncHandler(up.uploadLawImage),
   );
 
   // ── Timeline events ────────────────────────────

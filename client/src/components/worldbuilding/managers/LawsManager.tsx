@@ -1,18 +1,15 @@
 import { useMemo, useState } from 'react';
 import type { ImmutableLaw, UpsertImmutableLawInput } from '@verser/shared';
-import { AIImageGeneratorModal } from '../../ai/AIImageGeneratorModal';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import { Modal } from '../../ui/Modal';
 import { Textarea } from '../../ui/Textarea';
 import { useConfirmDialog } from '../../ui/useConfirmDialog';
 import { useEntityCrud } from '../../../hooks/useEntityCrud';
-import { useEntityImageFlow } from '../../../hooks/useEntityImageFlow';
 import { lawsService } from '../../../services/worldbuilding.service';
+import { EntityCard } from '../EntityCard';
 import { EntityDetailModal } from '../EntityDetailModal';
-import { InlineImagePicker } from '../InlineImagePicker';
 import { ManagerShell } from '../ManagerShell';
-import { PosterCard } from '../PosterCard';
 
 export interface LawsManagerProps {
   universeId: string;
@@ -33,12 +30,11 @@ function toForm(l: ImmutableLaw): FormState {
   return { title: l.title, description: l.description, category: l.category };
 }
 
-function toInput(form: FormState, imageUrl: string | null): UpsertImmutableLawInput {
+function toInput(form: FormState): UpsertImmutableLawInput {
   return {
     title: form.title.trim(),
     description: form.description.trim(),
     category: form.category.trim(),
-    imageUrl: imageUrl ?? undefined,
   };
 }
 
@@ -57,14 +53,6 @@ export function LawsManager({ universeId, onChange }: LawsManagerProps) {
     [universeId],
   );
 
-  const image = useEntityImageFlow<ImmutableLaw>({
-    applyAIForExisting: async (law, url) => {
-      await lawsService.update(universeId, law.id, { imageUrl: url });
-      await crud.refresh();
-      onChange?.();
-    },
-  });
-
   const [editing, setEditing] = useState<Editing | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -73,62 +61,30 @@ export function LawsManager({ universeId, onChange }: LawsManagerProps) {
   function openCreate(): void {
     setEditing({ mode: 'create' });
     setForm(EMPTY);
-    image.resetImageState();
     setSubmitError(null);
   }
 
   function openEdit(law: ImmutableLaw): void {
     setEditing({ mode: 'edit', law });
     setForm(toForm(law));
-    image.setImageState(() => ({ imageUrl: law.imageUrl ?? null, previewUrl: null, pendingFile: null }));
     setSubmitError(null);
-  }
-
-  function closeForm(): void {
-    image.cleanupPreview();
-    setEditing(null);
   }
 
   async function handleSubmit(): Promise<void> {
     if (!editing) return;
-    const input = toInput(form, image.imageState.imageUrl);
+    const input = toInput(form);
     if (!input.title || !input.description || !input.category) {
       setSubmitError('Title, description and category are required.');
       return;
     }
     try {
-      if (editing.mode === 'create') {
-        const created = await crud.create(input);
-        if (image.imageState.pendingFile && created) {
-          try {
-            await image.flushPendingUpload(created, (entity, file) =>
-              lawsService.uploadImage(universeId, entity.id, file),
-            );
-            await crud.refresh();
-          } catch (err) {
-            setSubmitError(
-              err instanceof Error
-                ? `Law created, but image upload failed: ${err.message}`
-                : 'Law created, but image upload failed.',
-            );
-            return;
-          }
-        }
-      } else {
-        await crud.update(editing.law.id, input);
-      }
-      closeForm();
+      if (editing.mode === 'create') await crud.create(input);
+      else await crud.update(editing.law.id, input);
+      setEditing(null);
       onChange?.();
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Could not save law.');
     }
-  }
-
-  async function handleImageUpload(law: ImmutableLaw, file: File): Promise<string> {
-    const result = await lawsService.uploadImage(universeId, law.id, file);
-    await crud.refresh();
-    onChange?.();
-    return result.law.imageUrl ?? '';
   }
 
   async function handleDelete(law: ImmutableLaw): Promise<void> {
@@ -168,13 +124,12 @@ export function LawsManager({ universeId, onChange }: LawsManagerProps) {
         </Button>
       }
     >
-      <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {crud.items.map((l) => (
           <li key={l.id}>
-            <PosterCard
+            <EntityCard
               name={l.title}
-              imageUrl={l.imageUrl ?? null}
-              fallbackGlyph="◈"
+              glyph="◈"
               caption={l.category}
               title={l.title}
               snippet={l.description}
@@ -194,7 +149,7 @@ export function LawsManager({ universeId, onChange }: LawsManagerProps) {
         open={viewing !== null}
         onClose={() => setViewing(null)}
         title={viewing?.title ?? ''}
-        imageUrl={viewing?.imageUrl ?? null}
+        imageUrl={null}
         fallbackGlyph="◈"
         sidebar={{
           label: 'Category',
@@ -220,7 +175,7 @@ export function LawsManager({ universeId, onChange }: LawsManagerProps) {
 
       <Modal
         open={editing !== null}
-        onClose={closeForm}
+        onClose={() => setEditing(null)}
         title={editing?.mode === 'edit' ? `Edit ${editing.law.title}` : 'New immutable law'}
       >
         <form
@@ -230,28 +185,6 @@ export function LawsManager({ universeId, onChange }: LawsManagerProps) {
             void handleSubmit();
           }}
         >
-          {editing ? (
-            <div className="flex flex-col gap-2">
-              <label className="font-ui text-xs uppercase tracking-wider text-text-secondary">
-                Imagery
-              </label>
-              <InlineImagePicker
-                currentUrl={
-                  image.imageState.previewUrl ??
-                  image.imageState.imageUrl ??
-                  (editing.mode === 'edit' ? editing.law.imageUrl : null)
-                }
-                onUpload={async (file) => {
-                  if (editing.mode === 'edit') return handleImageUpload(editing.law, file);
-                  return image.handleUploadForCreate(file);
-                }}
-                onGenerate={() => {
-                  if (editing.mode === 'edit') image.setAiTarget(editing.law);
-                  else image.openAIForCreate();
-                }}
-              />
-            </div>
-          ) : null}
           <Input
             label="Title"
             value={form.title}
@@ -274,7 +207,7 @@ export function LawsManager({ universeId, onChange }: LawsManagerProps) {
           />
           {submitError ? <p className="text-sm text-accent-red">{submitError}</p> : null}
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="secondary" onClick={closeForm}>
+            <Button type="button" variant="secondary" onClick={() => setEditing(null)}>
               Cancel
             </Button>
             <Button type="submit" loading={crud.mutating}>
@@ -283,24 +216,6 @@ export function LawsManager({ universeId, onChange }: LawsManagerProps) {
           </div>
         </form>
       </Modal>
-
-      {image.aiTarget ? (
-        <AIImageGeneratorModal
-          open={image.aiTarget !== null}
-          onClose={() => image.setAiTarget(null)}
-          universeId={universeId}
-          defaultPrompt={`Symbolic illustration of the immutable law "${image.aiTarget.title}" (${image.aiTarget.category}): ${image.aiTarget.description.slice(0, 200)}`}
-          onAccept={(url) => image.handleAIAcceptForExisting(image.aiTarget!, url)}
-        />
-      ) : null}
-
-      <AIImageGeneratorModal
-        open={image.aiOpenForCreate}
-        onClose={image.closeAIForCreate}
-        universeId={universeId}
-        defaultPrompt={`Symbolic illustration of the immutable law "${form.title || 'this law'}" (${form.category}): ${form.description.slice(0, 200)}`}
-        onAccept={image.handleAIAcceptForCreate}
-      />
 
       <ConfirmDialogPortal />
     </ManagerShell>

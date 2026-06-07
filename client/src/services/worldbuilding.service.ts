@@ -165,9 +165,6 @@ export const loreService = {
   delete(uid: string, id: string): Promise<void> {
     return apiClient.delete(`${base(uid)}/lore-entries/${id}`);
   },
-  uploadImage(uid: string, id: string, file: File): Promise<{ lore: LoreEntry }> {
-    return apiClient.uploadFile(`${base(uid)}/lore-entries/${id}/image`, file);
-  },
 };
 
 // ─── Immutable Laws ─────────────────────────────────
@@ -184,9 +181,6 @@ export const lawsService = {
   },
   delete(uid: string, id: string): Promise<void> {
     return apiClient.delete(`${base(uid)}/immutable-laws/${id}`);
-  },
-  uploadImage(uid: string, id: string, file: File): Promise<{ law: ImmutableLaw }> {
-    return apiClient.uploadFile(`${base(uid)}/immutable-laws/${id}/image`, file);
   },
 };
 

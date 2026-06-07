@@ -79,40 +79,4 @@ describe('Image uploads', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.system.imageUrl).toMatch(/^\/uploads\//);
   });
-
-  it('uploads a lore-entry image and updates the row', async () => {
-    const { token } = await loginAs(app);
-    const universe = await createUniverse(app, token);
-    const lore = await request(app)
-      .post(`/api/universes/${universe.id}/lore-entries`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({ title: 'Sky-fall', category: 'history', content: 'A long time ago…' });
-
-    const res = await request(app)
-      .post(`/api/universes/${universe.id}/lore-entries/${lore.body.data.id}/image`)
-      .set('Authorization', `Bearer ${token}`)
-      .attach('file', PNG_1x1, { filename: 'lore.png', contentType: 'image/png' });
-    expect(res.status).toBe(200);
-    expect(res.body.data.lore.imageUrl).toMatch(/^\/uploads\//);
-  });
-
-  it('uploads an immutable-law image and updates the row', async () => {
-    const { token } = await loginAs(app);
-    const universe = await createUniverse(app, token);
-    const law = await request(app)
-      .post(`/api/universes/${universe.id}/immutable-laws`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        title: 'No paradox',
-        description: 'Causality is preserved.',
-        category: 'physics',
-      });
-
-    const res = await request(app)
-      .post(`/api/universes/${universe.id}/immutable-laws/${law.body.data.id}/image`)
-      .set('Authorization', `Bearer ${token}`)
-      .attach('file', PNG_1x1, { filename: 'law.png', contentType: 'image/png' });
-    expect(res.status).toBe(200);
-    expect(res.body.data.law.imageUrl).toMatch(/^\/uploads\//);
-  });
 });
