@@ -169,21 +169,47 @@ export function TimelineManager({ universeId, onChange }: TimelineManagerProps) 
         </Button>
       }
     >
-      <ol className="relative space-y-3 border-l-2 border-border-ornate/30 pl-6">
+      {/* Vertical gold rail — same gradient + drop-shadow halo as the
+          decorative SectionHeader bar, rotated 90°. Renders as a
+          ::before-style absolute span so the <ol> itself stays semantic. */}
+      <ol className="relative space-y-4 pl-8">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute bottom-2 left-3 top-2 w-px bg-gradient-to-b from-accent-gold-light via-accent-gold to-transparent opacity-70 shadow-[0_0_10px_rgba(196,162,101,0.45)]"
+        />
         {[...crud.items]
           .sort((a, b) => a.sortOrder - b.sortOrder)
           .map((ev, idx, arr) => (
-            <li key={ev.id} className="surface-card relative p-4">
+            <li
+              key={ev.id}
+              className="surface-card gold-glow-hover group relative overflow-hidden p-4 transition-colors duration-base"
+            >
+              {/* Gold diamond marker — small rotated square with a soft halo,
+                  echoing the OrnateDivider glyphs. */}
               <span
-                className="absolute -left-[1.65rem] top-5 inline-block h-3 w-3 rounded-full bg-border-glow ring-2 ring-bg-primary"
                 aria-hidden
+                className="absolute -left-[1.6rem] top-5 inline-block h-2.5 w-2.5 rotate-45 border border-accent-gold-light bg-accent-gold shadow-[0_0_8px_rgba(196,162,101,0.7),0_0_18px_rgba(196,162,101,0.35)]"
               />
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <h4 className="font-display text-lg text-text-accent">{ev.title}</h4>
-                  <p className="text-xs uppercase tracking-wider text-text-secondary">
-                    {ev.date} · {ev.importance}
+              {/* Subtle inner left border that lights up on hover. */}
+              <span
+                aria-hidden
+                className="absolute inset-y-0 left-0 w-px bg-accent-gold/0 transition-colors duration-base group-hover:bg-accent-gold/40"
+              />
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2 font-display text-[11px] uppercase tracking-[0.28em] text-text-accent/80">
+                    <span aria-hidden className="text-text-accent/60">
+                      ✦
+                    </span>
+                    {ev.date}
+                    <span aria-hidden className="text-text-muted">
+                      ·
+                    </span>
+                    <span className="text-text-secondary">{ev.importance}</span>
                   </p>
+                  <h4 className="mt-1 font-display text-lg leading-tight text-text-primary">
+                    {ev.title}
+                  </h4>
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
@@ -215,7 +241,9 @@ export function TimelineManager({ universeId, onChange }: TimelineManagerProps) 
                 </div>
               </div>
               {ev.description ? (
-                <p className="mt-2 text-sm text-text-primary/90">{ev.description}</p>
+                <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                  {ev.description}
+                </p>
               ) : null}
             </li>
           ))}
