@@ -32,7 +32,7 @@ const SIZES: Record<Size, string> = {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'primary', size = 'md', loading, disabled, children, className = '', ...rest },
+  { variant = 'primary', size = 'md', loading, disabled, children, className = '', type, ...rest },
   ref,
 ) {
   const classes = [
@@ -47,7 +47,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ].join(' ');
 
   return (
-    <button ref={ref} disabled={disabled || loading} className={classes} {...rest}>
+    // Default `type="button"` so a Button placed anywhere inside a <form>
+    // doesn't accidentally submit it (HTML spec defaults <button> to
+    // type="submit"). Callers that *want* to submit must pass type="submit".
+    <button ref={ref} type={type ?? 'button'} disabled={disabled || loading} className={classes} {...rest}>
       {loading ? (
         <span
           className="block h-3 w-3 animate-[verser-spin_700ms_linear_infinite] rounded-full border border-current border-t-transparent"

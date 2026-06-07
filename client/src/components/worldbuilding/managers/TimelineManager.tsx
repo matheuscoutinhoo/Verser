@@ -142,7 +142,9 @@ export function TimelineManager({ universeId, onChange }: TimelineManagerProps) 
         { id: a.id, sortOrder: b.sortOrder },
         { id: b.id, sortOrder: a.sortOrder },
       ]);
-      onChange?.();
+      // Don't fire onChange here — reordering doesn't change the timeline
+      // event count, so the parent's run() refetch would just cause a
+      // page-wide re-render for nothing.
     } catch {
       // Rollback the optimistic swap; the user sees the row return to its
       // previous position rather than a stale-looking inconsistent state.

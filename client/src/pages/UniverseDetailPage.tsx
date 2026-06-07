@@ -126,7 +126,11 @@ export function UniverseDetailPage() {
     await run();
   }
 
-  if (status === 'loading' || status === 'idle') {
+  if (!data && (status === 'loading' || status === 'idle')) {
+    // Only block on the initial fetch — background refetches (e.g. after a
+    // manager mutation called `run()` to refresh counts) keep the existing
+    // `data` rendered so the page doesn't unmount the user's scroll
+    // position or the manager whose action triggered the refresh.
     return (
       <div className="py-10">
         <Spinner label="Loading universe…" />
@@ -134,7 +138,8 @@ export function UniverseDetailPage() {
     );
   }
 
-  if (status === 'error' || !data) {
+  if (!data) {
+    // No data and not loading anymore → real error (or first-load failure).
     return (
       <Card title="Universe unavailable">
         <p className="text-sm text-accent-red">
